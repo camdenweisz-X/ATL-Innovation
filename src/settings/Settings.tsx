@@ -99,6 +99,7 @@ export function Settings() {
           <div className="card pad small muted stack-sm">
             <p style={{ margin: 0 }}>Photos and descriptions are sent to Google's Gemini AI to suggest urgency. On the free tier Google may use them to improve its products, so don't include sensitive personal details.</p>
             <p style={{ margin: 0 }}>Your requests are visible only to you and the managers of the property you sent them to.</p>
+            <p style={{ margin: 0 }}><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></p>
           </div>
         </section>
 

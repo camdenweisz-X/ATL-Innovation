@@ -1,0 +1,44 @@
+/* Styles for the static Privacy and Terms pages. Colors match the app (src/styles.css). */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --ink: #18212b; --ink-2: #3a4552; --muted: #5d6874;
+  --line: #dde2e7; --accent: #1f5a96; --emer: #b42318; --emer-bg: #fdeceb; --emer-line: #f3b8b2;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --surface: #161d24; --ink: #e7ecf1; --ink-2: #c3ccd5; --muted: #95a1ad;
+    --line: #28323d; --accent: #6aa6df; --emer: #ff8b80; --emer-bg: #351816; --emer-line: #6b2a24;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --surface: #161d24; --ink: #e7ecf1; --ink-2: #c3ccd5; --muted: #95a1ad;
+  --line: #28323d; --accent: #6aa6df; --emer: #ff8b80; --emer-bg: #351816; --emer-line: #6b2a24;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 56px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+.brand img { width: 30px; height: 30px; border-radius: 8px; display: block; }
+.brand .it { color: var(--accent); }
+.top nav { display: flex; gap: 16px; font-size: 15px; }
+article { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; }
+h1 { font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+.meta { color: var(--muted); font-size: 14px; margin: 0 0 24px; }
+h2 { font-size: 19px; line-height: 1.3; margin: 32px 0 8px; }
+p, li { color: var(--ink-2); }
+ul { padding-left: 22px; margin: 8px 0; }
+li { margin: 4px 0; }
+.callout { background: var(--emer-bg); border: 1px solid var(--emer-line); border-radius: 12px; padding: 14px 16px; margin: 16px 0; }
+.callout p { margin: 0; color: var(--ink); }
+.callout b { color: var(--emer); }
+footer { margin-top: 24px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+@media (max-width: 480px) { article { padding: 22px 18px; } h1 { font-size: 26px; } }

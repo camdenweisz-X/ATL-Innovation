@@ -10,6 +10,11 @@ export function Brand() {
   return <Link to="/" className="brand"><span className="brand-mark"><Icon name="brand" /></span><span>Can<span className="brand-it">It</span>Wait</span></Link>;
 }
 
+/** Plain links (not router Links): these are static pages served outside the app. */
+export function LegalLinks() {
+  return <nav className="legal-links" aria-label="Legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>;
+}
+
 function AuthFrame({ title, lede, children, foot }: { title: string; lede?: string; children: React.ReactNode; foot?: React.ReactNode }) {
   return (
     <div className="auth">
@@ -23,6 +28,7 @@ function AuthFrame({ title, lede, children, foot }: { title: string; lede?: stri
           {children}
         </div>
         {foot && <div className="center small muted">{foot}</div>}
+        <LegalLinks />
       </div>
     </div>
   );
@@ -86,6 +92,7 @@ export function Landing() {
           </div>
         </div>
       </main>
+      <footer className="landing-hero landing-foot"><span>© 2026 The InnovAItors</span><LegalLinks /></footer>
     </div>
   );
 }
@@ -163,7 +170,7 @@ export function SignUp() {
         <Field label="Password" hint="At least 8 characters." htmlFor={pId}><input id={pId} className="input" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} /></Field>
         {err && <p className="err" role="alert"><Icon name="alert" width={16} height={16} />{err}</p>}
         <Button type="submit" block loading={busy}>Create account</Button>
-        <p className="xs muted center" style={{ margin: 0 }}>CanItWait uses AI to suggest urgency. Don't put sensitive personal details in reports.</p>
+        <p className="xs muted center" style={{ margin: 0 }}>By creating an account you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>. CanItWait uses AI to suggest urgency, so don't put sensitive personal details in reports.</p>
       </form>
     </AuthFrame>
   );

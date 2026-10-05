@@ -413,3 +413,9 @@ a.list-row:hover, button.list-row:hover { background: var(--surface-2); }
 .money { position: relative; }
 .money::before { content: "$"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
 .money .input { padding-left: 28px; }
+
+/* Privacy / Terms links */
+.legal-links { display: flex; justify-content: center; gap: 16px; font-size: 13px; }
+.legal-links a { color: var(--muted); }
+.legal-links a:hover { color: var(--ink); }
+.landing-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-top: 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); margin-top: auto; padding-top: 20px; }
