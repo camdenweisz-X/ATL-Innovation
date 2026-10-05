@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase";
 import { useSession } from "./lib/session";
 import { useT } from "./lib/i18n";
 import { Icon, type IconName } from "./ui/icons";
+import { LangSwitch } from "./ui/kit";
 import { Brand } from "./auth/AuthScreens";
 import { initials } from "./lib/format";
 
@@ -44,7 +45,7 @@ function beep() {
 }
 
 export function AppShell() {
-  const { workspace, setWorkspace, places, managed, profile } = useSession();
+  const { workspace, setWorkspace, places, managed, profile, user, refresh } = useSession();
   const { t, tn } = useT();
   const both = places.length > 0 && managed.length > 0;
   const unseen = useUnseenEmergencies(workspace === "manager", managed.map((p) => p.id));
@@ -88,7 +89,10 @@ export function AppShell() {
         <nav>
           {items.map((it) => link(it, <><Icon name={it.icon} /><span className="grow">{it.label}</span>{!!it.badge && <span className="badge Emergency">{it.badge}</span>}</>))}
         </nav>
-        <div className="foot row" style={{ padding: "8px 4px" }}>
+        <div style={{ padding: "0 4px 8px", marginTop: "auto" }}>
+          <LangSwitch compact onPick={async (l) => { if (user) { await supabase.from("profiles").update({ lang: l }).eq("id", user.id); await refresh(); } }} />
+        </div>
+        <div className="foot row" style={{ padding: "8px 4px", marginTop: 0 }}>
           <span className="avatar">{initials(profile?.full_name || "?")}</span>
           <div className="grow small"><div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile?.full_name || t("Your account")}</div>
             <div className="muted xs">{workspace === "manager" ? tn(managed.length, "{n} property", "{n} properties") : tn(places.length, "{n} home", "{n} homes")}</div></div>

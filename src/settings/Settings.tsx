@@ -49,7 +49,7 @@ export function Settings() {
         <div className="page-head" style={{ marginBottom: 0 }}><h1 className="h1">{t("Settings")}</h1></div>
 
         <section className="stack-sm">
-          <h2 className="section-title">{t("Language")}</h2>
+          <h2 className="section-title" id="language">Language · Idioma</h2>
           <LangSwitch onPick={async (l) => {
             if (!user) return;
             const { error } = await supabase.from("profiles").update({ lang: l }).eq("id", user.id);
