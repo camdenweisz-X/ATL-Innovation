@@ -11,6 +11,7 @@ import type { Place, Urgency } from "../lib/types";
 import { Button, Empty, Field, YesNo, useToast } from "../ui/kit";
 import { Icon, type IconName } from "../ui/icons";
 import { TopBar } from "../AppShell";
+import { PhotoPicker } from "./PhotoPicker";
 
 const GAS_LINE = "1-877-427-4321"; // Atlanta Gas Light emergency line
 const ROOMS = ["Kitchen", "Bathroom", "Bedroom", "Living room", "Laundry", "Hallway", "Outside", "Other"];
@@ -71,7 +72,7 @@ export function Report() {
     );
   }
 
-  const pick = async (f: File | undefined) => {
+  const pick = async (f: Blob | undefined) => {
     if (!f) return;
     setErr(null);
     try {
@@ -193,13 +194,7 @@ export function Report() {
             {places.length === 1 && place && (
               <div className="row small muted"><Icon name="pin" width={16} height={16} />{place.label}{place.unit ? ` · ${place.unit}` : ""}</div>
             )}
-            <label className={`photo-pick ${draft.thumb ? "has" : ""}`}>
-              {draft.thumb ? <img className="thumb" src={draft.thumb} alt="Your photo of the problem" /> : <span className="thumb"><Icon name="camera" /></span>}
-              <span className="grow"><span className="h3" style={{ display: "block" }}>{draft.thumb ? "Photo added" : "Add a photo"}</span>
-                <span className="small muted">{draft.thumb ? "Tap to change it." : "Take one now or choose from your photos."}</span></span>
-              <input type="file" accept="image/*" aria-label="Add a photo" onChange={(e) => pick(e.target.files?.[0])} />
-            </label>
-            {draft.thumb && <button className="btn ghost sm" style={{ alignSelf: "flex-start", marginTop: -8 }} onClick={() => { setPhoto(null); setDraft((d) => ({ ...d, thumb: null, big: null })); }}><Icon name="trash" />Remove photo</button>}
+            <PhotoPicker thumb={draft.thumb} onPick={pick} onRemove={() => { setPhoto(null); setDraft((d) => ({ ...d, thumb: null, big: null })); }} />
             <Field label="What's going on?" htmlFor={descId}>
               <textarea id={descId} className="textarea" placeholder="Water dripping from the bathroom ceiling over the sink, started tonight" value={draft.desc} onChange={(e) => { const v = e.target.value; setDraft((d) => ({ ...d, desc: v })); }} />
             </Field>

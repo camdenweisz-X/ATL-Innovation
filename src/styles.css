@@ -274,10 +274,8 @@ a.list-row:hover, button.list-row:hover { background: var(--surface-2); }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
 
 /* ---------- photo picker ---------- */
-.photo-pick { position: relative; display: flex; align-items: center; gap: 14px; padding: 14px; border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); background: var(--surface); cursor: pointer; }
-.photo-pick:hover { border-color: var(--accent); }
+.photo-pick { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 14px; border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); background: var(--surface); }
 .photo-pick.has { border-style: solid; }
-.photo-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .photo-pick .thumb { width: 84px; height: 84px; border-radius: 10px; object-fit: cover; flex: none; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent); }
 .photo-pick .thumb svg { width: 30px; height: 30px; }
 
@@ -432,3 +430,12 @@ a.list-row:hover, button.list-row:hover { background: var(--surface-2); }
 .preview-phone { pointer-events: none; user-select: none; }
 .preview-btn { cursor: default; }
 .preview-cap { font-size: 13px; color: var(--muted); text-align: center; }
+
+/* Photo picker and in-app camera */
+.photo-actions { gap: 8px; }
+@media (max-width: 380px) { .photo-pick { flex-direction: column; } .photo-pick .thumb { width: 100%; height: 160px; } }
+.cam { position: relative; background: #000; border-radius: var(--r-md); overflow: hidden; aspect-ratio: 4 / 3; }
+.cam video, .cam img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cam-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: #fff; font-size: 15px; }
+.cam-actions { justify-content: center; gap: 10px; }
+.cam-actions .btn { min-width: 140px; }
