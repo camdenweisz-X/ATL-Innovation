@@ -181,6 +181,58 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 .rolecard .rc-d{font-size:14px;color:var(--muted)}
 .empty{border:1.5px dashed var(--line);border-radius:14px;padding:28px 20px;text-align:center;color:var(--muted)}
 .banner{background:var(--flag-bg);color:var(--ink);border:1px solid var(--flag);border-radius:12px;padding:12px 14px;font-size:14px}
+/* manager tabs, work orders */
+#mgrTabs{margin:0 0 16px}
+#mgrTabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.pill.st{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.pill.st.fixed{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
+.wo-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wo-actions .btn.quiet{font-size:13.5px;padding:8px 12px}
+.wo-actions select{width:auto;font-size:14px;padding:7px 10px;border-radius:9px}
+.wo-panel{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.wo-panel input,.wo-panel textarea{font-size:15px;padding:10px 11px}
+.wo-panel textarea{min-height:64px}
+.wo-panel .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wo-panel .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.timeline li{position:relative;padding:0 0 12px 22px;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:4px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.timeline li::after{content:"";position:absolute;left:8.5px;top:17px;bottom:-1px;width:1.5px;background:var(--line)}
+.timeline li:last-child{padding-bottom:0}
+.timeline li:last-child::after{display:none}
+.timeline li.on::before{background:var(--accent)}
+.timeline li.todo{color:var(--muted)}
+.timeline .tm{font:12px var(--mono);color:var(--muted)}
+.toresident{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+/* alerts */
+.alert{display:flex;gap:10px;align-items:flex-start;background:var(--flag-bg);border:1px solid var(--flag);border-radius:12px;padding:12px 14px;font-size:14px}
+.alert.high{background:var(--urg-bg);border-color:var(--urg)}
+.alert svg{width:20px;height:20px;flex:none;stroke:var(--flag);margin-top:1px}
+.alert.high svg{stroke:var(--urg)}
+.alert .t{flex:1;min-width:0}
+.alert b{display:block;font-weight:600}
+.alert .btn.quiet{font-size:13px;padding:6px 10px;flex:none;background:var(--surface)}
+.filterline{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;font-size:14px;margin-bottom:12px}
+/* insights */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile.wide{grid-column:1/-1}
+.tile .k{font:600 11px/1.3 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile b{font:700 28px/1.1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tile .s{font-size:12.5px;color:var(--muted);line-height:1.4}
+.tile.hero{background:var(--rout-bg);border-color:var(--rout)}
+.tile.hero b{font-size:34px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:4px 10px;align-items:center;font-size:13.5px}
+.bar .track{grid-column:1/-1;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.bar .fill{height:100%;border-radius:0 4px 4px 0;background:var(--accent)}
+.bar .v{text-align:right;font:500 13px var(--mono);color:var(--muted)}
+.costs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.costs input{padding:10px 11px}
+.money{position:relative}
+.money::before{content:"$";position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.money input{padding-left:22px}
+.samplebar{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin:-6px 0 14px}
 footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 </style>
 
@@ -367,15 +419,33 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
       </form>
     </div>
     <div id="mgrMain" hidden>
-    <h1>Maintenance inbox</h1>
+    <h1>Maintenance</h1>
     <div class="codecard" id="codeCard"></div>
-    <p class="lede" id="inboxLede">Emergencies first, then urgent, then routine. Newest first within each.</p>
-    <div class="summary" id="inboxSummary"></div>
-    <div class="chips" id="inboxFilter" style="margin-bottom:14px">
-      <button class="chip" type="button" data-f="open" aria-pressed="true">Open</button>
-      <button class="chip" type="button" data-f="all" aria-pressed="false">All</button>
+    <div class="samplebar" id="sampleBar" hidden></div>
+    <div class="seg" id="mgrTabs" role="group" aria-label="Manager view">
+      <button type="button" data-mt="requests" aria-pressed="true">Requests</button>
+      <button type="button" data-mt="insights" aria-pressed="false">Insights</button>
     </div>
-    <div class="stack" id="inboxList"></div>
+    <div id="mt-requests">
+      <div class="stack" id="alertStrip" style="gap:8px;margin-bottom:14px" hidden></div>
+      <p class="lede" id="inboxLede">Emergencies first, then urgent, then routine. Newest first within each.</p>
+      <div class="summary" id="inboxSummary"></div>
+      <div class="chips" id="inboxFilter" style="margin-bottom:14px">
+        <button class="chip" type="button" data-f="open" aria-pressed="true">Open</button>
+        <button class="chip" type="button" data-f="scheduled" aria-pressed="false">Scheduled</button>
+        <button class="chip" type="button" data-f="fixed" aria-pressed="false">Fixed</button>
+        <button class="chip" type="button" data-f="all" aria-pressed="false">All</button>
+      </div>
+      <div class="filterline" id="unitFilterLine" hidden></div>
+      <div class="stack" id="inboxList"></div>
+    </div>
+    <div id="mt-insights" hidden>
+      <div class="chips" id="periodFilter" style="margin-bottom:14px">
+        <button class="chip" type="button" data-p="30" aria-pressed="true">Last 30 days</button>
+        <button class="chip" type="button" data-p="0" aria-pressed="false">All time</button>
+      </div>
+      <div class="stack" id="insightsBody"></div>
+    </div>
     </div>
   </section>
 
@@ -390,7 +460,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
    1) claude.ai artifact: AI via claude.use("sample"), inbox via claude.use("db")
    2) Static hosting (Vercel): AI via POST /api/triage, inbox in this browser (localStorage)
    ============================================================ */
-const APP_VERSION = "v1.4";
+const APP_VERSION = "v1.5";
 /* SHARED-START (build.sh copies this block into lib/triage.js for the hosted API) */
 const LEVELS = ["Routine","Urgent","Emergency"];
 const RANK = {Routine:1, Urgent:2, Emergency:3};
@@ -402,6 +472,106 @@ const SAFETY_QS = [
   {k:"co",   q:"Is a carbon monoxide alarm going off?", cat:"Gas"},
   {k:"lock", q:"Can't lock your front door?", cat:"Doors / Locks / Windows"},
 ];
+/* SHARED-END */
+/* SHARED-START (work orders, repeat alerts, insights: pure functions, tested in test/insights.test.js) */
+const DAY_MS = 864e5;
+const STATUSES = ["new","seen","scheduled","fixed"];
+const STATUS_LABEL = {new:"New", seen:"Seen", scheduled:"Scheduled", fixed:"Fixed"};
+function statusOf(i){ return i.status === "done" ? "fixed" : (STATUSES.includes(i.status) ? i.status : "new"); }
+function finalUrgency(i){ return i.mgrUrgency || i.urgency; }
+function tOf(i){ return Date.parse(i.createdAt) || 0; }
+function unitKey(i){ return (String(i.propCode || i.prop || "") + "|" + String(i.unit || "")).toLowerCase().replace(/[^a-z0-9|]/g, ""); }
+// When maintenance first reacted (seen, scheduled or fixed), and when it was fixed.
+function firstAt(i, kinds){ const h = (i.history || []).filter(x => kinds.includes(x.s)).map(x => Date.parse(x.at)).filter(Boolean); return h.length ? Math.min(...h) : null; }
+function seenAt(i){ return firstAt(i, ["seen","scheduled","fixed"]); }
+function fixedAt(i){ return firstAt(i, ["fixed"]); }
+// Apply a manager (or resident) update to a work order and log it in the history.
+function applyUpdate(item, patch, at){
+  const out = {...item, ...patch}; delete out.note;
+  const history = [...(item.history || [])];
+  if (patch.status && (patch.status !== statusOf(item) || patch.status === "scheduled")) history.push({ s: patch.status, at, note: patch.note || "" });
+  if (patch.mgrUrgency && patch.mgrUrgency !== finalUrgency(item)) history.push({ s: "urgency", at, note: `Urgency changed to ${patch.mgrUrgency}` });
+  out.history = history;
+  return out;
+}
+function median(xs){ if (!xs.length) return null; const s = [...xs].sort((a,b) => a-b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2; }
+// Repeat problems: the same unit reporting the same category 2+ times within unitDays,
+// and building-wide issues: the same category from buildingUnits+ different units within buildingDays.
+function findRepeats(items, opts = {}){
+  const now = opts.now ?? Date.now(), unitDays = opts.unitDays ?? 60, bDays = opts.buildingDays ?? 7, bUnits = opts.buildingUnits ?? 3;
+  const alerts = [], byId = {};
+  const groups = new Map();
+  for (const i of items){
+    if (!i.unit || now - tOf(i) > unitDays * DAY_MS) continue;
+    const k = unitKey(i) + "#" + i.category;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(i);
+  }
+  for (const list of groups.values()){
+    if (list.length < 2) continue;
+    list.sort((a,b) => tOf(a) - tOf(b));
+    const span = Math.max(1, Math.ceil((tOf(list[list.length-1]) - tOf(list[0])) / DAY_MS));
+    alerts.push({ kind:"unit", level: list.length >= 3 ? "high" : "watch", unit: list[0].unit, unitKey: unitKey(list[0]), category: list[0].category,
+      count: list.length, days: span, ids: list.map(i => i.id), last: list[list.length-1].createdAt });
+    list.forEach((i, n) => { byId[i.id] = { ...(byId[i.id] || {}), nth: n + 1, count: list.length, days: span }; });
+  }
+  const cats = new Map();
+  for (const i of items){
+    if (now - tOf(i) > Math.max(bDays, 1) * 2 * DAY_MS) continue;
+    const k = String(i.propCode || i.prop || "") + "#" + i.category;
+    if (!cats.has(k)) cats.set(k, []);
+    cats.get(k).push(i);
+  }
+  for (const list of cats.values()){
+    list.sort((a,b) => tOf(b) - tOf(a));
+    for (let s = 0; s < list.length; s++){
+      const win = list.filter(i => tOf(i) <= tOf(list[s]) && tOf(list[s]) - tOf(i) <= bDays * DAY_MS);
+      const units = new Set(win.map(unitKey));
+      if (units.size >= bUnits){
+        const span = Math.max(1, Math.ceil((tOf(win[0]) - tOf(win[win.length-1])) / DAY_MS));
+        alerts.push({ kind:"building", level:"high", category: list[0].category, units: units.size, count: win.length, days: span,
+          unitNames: [...new Set(win.map(i => i.unit))], ids: win.map(i => i.id), last: win[0].createdAt });
+        win.forEach(i => { byId[i.id] = { ...(byId[i.id] || {}), building: units.size }; });
+        break;
+      }
+    }
+  }
+  const rank = a => (a.kind === "building" ? 0 : a.level === "high" ? 1 : 2);
+  alerts.sort((a,b) => rank(a) - rank(b) || String(b.last).localeCompare(String(a.last)));
+  return { alerts, byId };
+}
+// Numbers for the Insights tab. Costs are the manager's own figures; nothing is assumed when they are blank.
+function computeInsights(items, opts = {}){
+  const now = opts.now ?? Date.now(), since = opts.sinceDays || 0;
+  const list = items.filter(i => !since || now - tOf(i) <= since * DAY_MS);
+  const after = list.filter(i => i.afterHours);
+  const couldWait = after.filter(i => finalUrgency(i) !== "Emergency");
+  const emerg = list.filter(i => finalUrgency(i) === "Emergency");
+  const emergAck = emerg.map(i => seenAt(i) && seenAt(i) - tOf(i)).filter(x => x > 0);
+  const fixed = list.filter(i => statusOf(i) === "fixed");
+  const fixTimes = fixed.map(i => fixedAt(i) && fixedAt(i) - tOf(i)).filter(x => x > 0);
+  const visitKnown = fixed.filter(i => typeof i.firstVisit === "boolean");
+  const returnTrips = visitKnown.filter(i => !i.firstVisit).length;
+  const completeKnown = list.filter(i => typeof i.blanksLeft === "number");
+  const complete = completeKnown.filter(i => i.blanksLeft === 0 && i.hasPhoto).length;
+  const reviewed = list.filter(i => i.suggested && !i.manualReview && statusOf(i) !== "new");
+  const kept = reviewed.filter(i => finalUrgency(i) === i.suggested).length;
+  const pct = (a, b) => b ? Math.round(100 * a / b) : null;
+  const callout = Number(opts.calloutCost) || 0, trip = Number(opts.tripCost) || 0;
+  const byCat = {};
+  for (const i of list) byCat[i.category] = (byCat[i.category] || 0) + 1;
+  return {
+    total: list.length, open: list.filter(i => statusOf(i) !== "fixed").length,
+    afterHours: after.length, couldWait: couldWait.length,
+    calloutSavings: callout ? couldWait.length * callout : null,
+    emergencies: emerg.length, emergencyAckMs: median(emergAck),
+    fixed: fixed.length, fixMs: median(fixTimes),
+    firstVisitRate: pct(visitKnown.length - returnTrips, visitKnown.length), returnTrips, returnTripCost: trip ? returnTrips * trip : null,
+    completeRate: pct(complete, completeKnown.length), completeKnown: completeKnown.length,
+    keptRate: pct(kept, reviewed.length), reviewed: reviewed.length,
+    byCategory: Object.entries(byCat).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  };
+}
 /* SHARED-END */
 const GAS_LINE = "1-877-427-4321"; // Atlanta Gas Light emergency line
 
@@ -805,8 +975,10 @@ $("sendBtn").onclick = async ()=>{
     safety: ai ? ai.safety_message : "", category: $("r-cat").value, title: title || "Maintenance request", request: text, answers,
     checklistYes: SAFETY_QS.filter(s=>current.inp.checklist[s.k]==="yes").map(s=>s.q.replace(/\?$/,"")),
     propCode: profile.code || "", photo: state.photoThumb || null, manualReview: !ai, reviewReason: ai ? "" : (ERR_COPY[state.aiError]||"AI unavailable").replace(/\.$/,""),
-    status: "new", app: APP_VERSION
+    status: "new", app: APP_VERSION, blanksLeft: n, hasPhoto: !!state.photoThumb,
+    history: []
   };
+  item.history.push({ s:"new", at:item.createdAt, note:"" });
   item.full = composeFinal(item);
   $("sendBtn").disabled = true; $("sendBtn").textContent = "Sending…";
   const where = profile.mode === "inbox" ? await saveToInbox(item) : "direct";
@@ -914,6 +1086,21 @@ $("mgrForm").addEventListener("submit", e=>{
   store.set("fc_property", { name, line: $("mg-line").value.trim(), code: makeCode(name), created: new Date().toISOString() });
   renderInbox();
 });
+/* Sample data lives only in this browser (fc_sample) so a demo never writes fake requests into a real inbox. */
+function sampleList(){ return store.get("fc_sample", []); }
+function allInbox(){ return [...inboxItems, ...sampleList()]; }
+let mgrTab = "requests", unitFilter = null, openPanel = null, period = 30, currentAlerts = [];
+const ALERT_ICON = svg('<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.7"/><path d="M20 4v4.7h-4.7"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.3"/><path d="M4 20v-4.7h4.7"/>');
+function fmtDur(ms){
+  if (ms == null) return "—";
+  const m = Math.round(ms / 6e4); if (m < 60) return `${Math.max(1, m)} min`;
+  const h = ms / 36e5; if (h < 48) return `${h < 10 ? h.toFixed(1) : Math.round(h)} hrs`;
+  return `${(ms / 864e5).toFixed(1)} days`;
+}
+const money = n => "$" + Math.round(n).toLocaleString();
+const ordinal = n => n + (["th","st","nd","rd"][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)] || "th");
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
 function renderInbox(){
   if (role !== "manager" && !RT.inArtifact){ $("inboxCount").hidden = true; return; }
   const prop = store.get("fc_property", null);
@@ -924,55 +1111,305 @@ function renderInbox(){
     $("copyCode").onclick = async ()=>{ try{ await navigator.clipboard.writeText(prop.code); $("copyCode").textContent="Copied"; }catch{ $("copyCode").textContent="Select the code"; } setTimeout(()=>{ const b=$("copyCode"); if(b) b.textContent="Copy code"; },1800); };
   }
   if (!RT.inArtifact) inboxItems = store.get("fc_inbox", []).filter(i => !prop || i.propCode === prop.code);
+  const items = allInbox();
+  const rep = findRepeats(items);
+  currentAlerts = rep.alerts;
+  renderSampleBar(items);
+  document.querySelectorAll("#mgrTabs button").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.mt === mgrTab)));
+  $("mt-requests").hidden = mgrTab !== "requests"; $("mt-insights").hidden = mgrTab !== "insights";
+  const open = items.filter(i => statusOf(i) !== "fixed");
+  const nEm = open.filter(i => finalUrgency(i) === "Emergency").length;
+  $("inboxCount").hidden = !nEm; $("inboxCount").textContent = nEm;
+  if (mgrTab === "insights"){ renderInsights(items); return; }
+
+  // Alerts strip: the top three, the rest live in Insights.
+  $("alertStrip").hidden = !rep.alerts.length;
+  $("alertStrip").innerHTML = rep.alerts.slice(0,3).map((a,n)=> alertHTML(a, n)).join("") +
+    (rep.alerts.length > 3 ? `<button class="btn link" type="button" data-goto="insights" style="align-self:flex-start;padding:2px 0">${rep.alerts.length - 3} more in Insights</button>` : "");
   $("inboxLede").textContent = RT.inArtifact ? "Emergencies first, then urgent, then routine. Newest first within each." :
     "Requests from residents who entered your code, emergencies first. Demo build: requests sent from this phone.";
-  const open = inboxItems.filter(i=>i.status!=="done");
-  const n = l => open.filter(i=>i.urgency===l).length;
+  const n = l => open.filter(i => finalUrgency(i) === l).length;
   $("inboxSummary").innerHTML = `<div class="e"><b>${n("Emergency")}</b><span>Emergency</span></div><div class="u"><b>${n("Urgent")}</b><span>Urgent</span></div><div class="r"><b>${n("Routine")}</b><span>Routine</span></div>`;
-  const nEm = open.filter(i=>i.urgency==="Emergency").length;
-  $("inboxCount").hidden = !nEm; $("inboxCount").textContent = nEm;
-  const list = (inboxFilter==="open" ? open : inboxItems).slice()
-    .sort((a,b)=> (RANK[b.urgency]-RANK[a.urgency]) || (a.status==="done") - (b.status==="done") || String(b.createdAt).localeCompare(String(a.createdAt)));
+  const byStatus = { open: i => statusOf(i) !== "fixed", scheduled: i => statusOf(i) === "scheduled", fixed: i => statusOf(i) === "fixed", all: () => true }[inboxFilter];
+  let list = items.filter(byStatus);
+  $("unitFilterLine").hidden = !unitFilter;
+  if (unitFilter){
+    const uf = unitFilter;
+    list = items.filter(i => uf.unitKey ? (unitKey(i) === uf.unitKey && i.category === uf.category) : uf.ids.includes(i.id));
+    $("unitFilterLine").innerHTML = `<span>Showing ${esc(unitFilter.label)}</span><button class="btn quiet" type="button" id="clearUnitFilter" style="padding:6px 10px;font-size:13px">Show all</button>`;
+    $("clearUnitFilter").onclick = ()=>{ unitFilter = null; renderInbox(); };
+  }
+  list.sort((a,b)=> (statusOf(a)==="fixed") - (statusOf(b)==="fixed") || (RANK[finalUrgency(b)] - RANK[finalUrgency(a)]) || String(b.createdAt).localeCompare(String(a.createdAt)));
+  const kept = keepPanelValues();
   if (inboxMsg && !list.length){ $("inboxList").innerHTML = `<div class="empty">${esc(inboxMsg)}</div>`; return; }
-  if (!list.length){ $("inboxList").innerHTML = `<div class="empty">No ${inboxFilter==="open"?"open ":""}requests yet. When a resident taps Send, it shows up here with the photo, unit, and urgency.</div>`; return; }
-  $("inboxList").innerHTML = list.map(i=>{
-    const changed = i.aiUrgency && i.urgency !== i.suggested;
-    return `<article class="inbox-item ${esc(i.urgency)} ${i.status==="done"?"done":""}">
-      <div class="inbox-head">
-        ${i.photo ? `<img src="${esc(i.photo)}" alt="Resident's photo">` : ""}
-        <div class="t">
-          <div class="pills"><span class="pill ${esc(i.urgency)}">${esc(i.urgency)}</span><span class="pill cat">${esc(i.category)}</span>${i.manualReview?'<span class="pill flag">Manual review</span>':""}${changed?`<span class="pill flag">Resident changed from ${esc(i.suggested)}</span>`:""}${i.status==="done"?'<span class="pill cat">Handled</span>':""}</div>
-          <h3>${esc(i.title)}</h3>
-          <div class="mono">${esc(i.unit)} · ${esc(i.name)} · ${esc(i.localTime)}${i.afterHours?" · after hours":""}</div>
-        </div>
+  if (!list.length){
+    const word = {open:"open ", scheduled:"scheduled ", fixed:"fixed ", all:""}[inboxFilter];
+    $("inboxList").innerHTML = `<div class="empty">No ${word}requests yet. When a resident taps Send, it shows up here with the photo, unit, and urgency.${items.length ? "" : `<br><button class="btn quiet" type="button" data-act="loadSample" style="margin-top:12px">Load sample data to try it</button>`}</div>`;
+    return;
+  }
+  $("inboxList").innerHTML = list.map(i => itemHTML(i, rep)).join("");
+  restorePanelValues(kept);
+}
+function renderSampleBar(items){
+  const nS = sampleList().length;
+  $("sampleBar").hidden = !nS;
+  if (nS) $("sampleBar").innerHTML = `<span>Showing ${plural(nS, "sample request")} with your real ones.</span><button class="btn quiet" type="button" data-act="clearSample" style="padding:5px 10px;font-size:12.5px">Remove sample data</button>`;
+}
+function alertHTML(a, n){
+  const title = a.kind === "building" ? `Possible building-wide ${a.category} problem` :
+    `${a.unit}: ${a.count} ${a.category} requests in ${plural(a.days, "day")}`;
+  const sub = a.kind === "building" ? `${a.units} units reported it within ${plural(a.days, "day")} (${a.unitNames.join(", ")}). Check shared equipment before sending a tech to each unit.` :
+    a.level === "high" ? "This keeps coming back. Look for the root cause before another quick fix." : "Second report like this. Worth checking whether the first fix held.";
+  return `<div class="alert ${a.level === "high" ? "high" : ""}">${ALERT_ICON}<div class="t"><b>${esc(title)}</b>${esc(sub)}</div><button class="btn quiet" type="button" data-alert="${n}">Show</button></div>`;
+}
+function statusPill(i){
+  const st = statusOf(i);
+  const txt = st === "scheduled" && i.scheduledFor ? `Scheduled ${fmtTime(new Date(i.scheduledFor))}` : STATUS_LABEL[st];
+  return `<span class="pill st ${st}">${esc(txt)}</span>`;
+}
+function timelineHTML(i, forResident){
+  const st = statusOf(i), order = STATUSES.indexOf(st);
+  const last = k => (i.history || []).filter(x => x.s === k).pop();
+  const sch = last("scheduled"), fixAt = fixedAt(i), seen = seenAt(i);
+  const rows = [
+    { k:"new", t: forResident ? "Sent" : "Reported", at: Date.parse(i.createdAt) },
+    { k:"seen", t: forResident ? "Seen by maintenance" : "Seen", at: seen },
+    { k:"scheduled", t: i.scheduledFor ? `Visit set for ${fmtTime(new Date(i.scheduledFor))}${i.tech ? " · " + i.tech : ""}` : "Visit scheduled", at: sch ? Date.parse(sch.at) : null },
+    { k:"fixed", t: "Fixed" + (i.firstVisit === false ? " (took a return trip)" : ""), at: fixAt }
+  ].filter(r => !(r.k === "scheduled" && st === "fixed" && !r.at));
+  return `<ol class="timeline">${rows.map(r => {
+    const idx = STATUSES.indexOf(r.k), done = idx <= order;
+    return `<li class="${done ? "on" : "todo"}">${esc(r.t)}${r.at ? `<div class="tm">${esc(fmtTime(new Date(r.at)))}</div>` : ""}</li>`;
+  }).join("")}</ol>`;
+}
+function itemHTML(i, rep){
+  const st = statusOf(i), fu = finalUrgency(i), r = rep.byId[i.id] || {};
+  const resChanged = i.aiUrgency && i.urgency !== i.suggested;
+  const mgrChanged = i.mgrUrgency && i.mgrUrgency !== i.urgency;
+  const pills = [
+    `<span class="pill ${esc(fu)}">${esc(fu)}</span>`, statusPill(i), `<span class="pill cat">${esc(i.category)}</span>`,
+    i.sample ? '<span class="pill cat">Sample</span>' : "",
+    i.manualReview ? '<span class="pill flag">Manual review</span>' : "",
+    resChanged ? `<span class="pill flag">Resident changed from ${esc(i.suggested)}</span>` : "",
+    mgrChanged ? `<span class="pill flag">You changed from ${esc(i.urgency)}</span>` : "",
+    r.count ? `<span class="pill flag">Repeat · ${ordinal(r.nth)} of ${r.count} in ${plural(r.days, "day")}</span>` : "",
+    r.building ? `<span class="pill flag">${r.building} units, same problem</span>` : ""
+  ].join("");
+  const isOpen = openPanel && openPanel.id === i.id;
+  let actions = "";
+  if (st !== "fixed"){
+    actions = `<div class="wo-actions">
+      ${st === "new" ? `<button class="btn quiet" type="button" data-act="seen" data-id="${esc(i.id)}">Mark seen</button>` : ""}
+      <button class="btn quiet" type="button" data-act="schedule" data-id="${esc(i.id)}">${st === "scheduled" ? "Reschedule" : "Schedule visit"}</button>
+      <button class="btn quiet" type="button" data-act="fix" data-id="${esc(i.id)}">Mark fixed</button>
+      <label class="hint" style="display:inline-flex;align-items:center;gap:6px">Urgency
+        <select data-act="urgency" data-id="${esc(i.id)}" aria-label="Change urgency">${LEVELS.slice().reverse().map(l=>`<option ${l===fu?"selected":""}>${l}</option>`).join("")}</select></label>
+    </div>`;
+    if (isOpen && openPanel.kind === "schedule") actions += `<div class="wo-panel">
+      <div class="row2">
+        <div class="field"><label for="wo-when">Visit time</label><input type="datetime-local" id="wo-when" value="${esc(openPanel.when || defaultVisit())}"></div>
+        <div class="field"><label for="wo-tech">Technician <span class="opt">(optional)</span></label><input type="text" id="wo-tech" placeholder="Marcus" value="${esc(i.tech || "")}"></div>
       </div>
-      ${i.aiReason?`<div class="note">AI: ${esc(i.aiReason)}</div>`:""}
-      <details><summary>Full request</summary><div class="reqtext">${esc(i.full || i.request)}</div></details>
-      ${(RT.inArtifact ? RT.canManage : true) && i.status!=="done" ? `<div><button class="btn quiet" type="button" data-done="${esc(i.id)}" data-doc="${esc(i._doc||"")}">Mark handled</button></div>`:""}
-    </article>`;
-  }).join("");
+      <div class="field"><label for="wo-note">Note to resident <span class="opt">(optional)</span></label><textarea id="wo-note" placeholder="Please keep pets in another room.">${esc(i.noteToResident || "")}</textarea></div>
+      <p class="err" id="wo-err" hidden></p>
+      <div class="btnrow"><button class="btn" type="button" data-act="saveSchedule" data-id="${esc(i.id)}" style="padding:11px 14px;font-size:15px">Save visit</button><button class="btn quiet" type="button" data-act="cancel">Cancel</button></div>
+    </div>`;
+    if (isOpen && openPanel.kind === "fix") actions += `<div class="wo-panel">
+      <div class="field"><span class="lbl" id="wo-firstLbl">Fixed on the first visit?</span>
+        <div class="seg" role="group" aria-labelledby="wo-firstLbl">
+          <button type="button" data-act="first" data-v="yes" aria-pressed="${openPanel.first === true}">Yes</button>
+          <button type="button" data-act="first" data-v="no" aria-pressed="${openPanel.first === false}">No, took another trip</button>
+        </div><span class="hint">This feeds the first-visit fix rate in Insights.</span></div>
+      <div class="field"><label for="wo-note">Note to resident <span class="opt">(optional)</span></label><textarea id="wo-note" placeholder="Replaced the supply line under the sink.">${esc(openPanel.note || "")}</textarea></div>
+      <p class="err" id="wo-err" hidden></p>
+      <div class="btnrow"><button class="btn" type="button" data-act="saveFix" data-id="${esc(i.id)}" style="padding:11px 14px;font-size:15px">Mark fixed</button><button class="btn quiet" type="button" data-act="cancel">Cancel</button></div>
+    </div>`;
+  } else if (typeof i.firstVisit === "boolean"){
+    actions = `<div class="note">${i.firstVisit ? "Fixed on the first visit." : "Took more than one trip."}</div>`;
+  }
+  return `<article class="inbox-item ${esc(fu)} ${st==="fixed"?"done":""}">
+    <div class="inbox-head">
+      ${i.photo ? `<img src="${esc(i.photo)}" alt="Resident's photo">` : ""}
+      <div class="t">
+        <div class="pills">${pills}</div>
+        <h3>${esc(i.title)}</h3>
+        <div class="mono">${esc(i.unit)} · ${esc(i.name)} · ${esc(i.localTime)}${i.afterHours?" · after hours":""}</div>
+      </div>
+    </div>
+    ${i.aiReason?`<div class="note">AI: ${esc(i.aiReason)}</div>`:""}
+    ${i.noteToResident && st !== "fixed" ? `<div class="note">Told resident: ${esc(i.noteToResident)}</div>` : ""}
+    <details><summary>Full request</summary><div class="reqtext">${esc(i.full || i.request)}</div></details>
+    <details><summary>Status history</summary><div style="margin-top:10px">${timelineHTML(i, false)}</div></details>
+    ${(RT.inArtifact && !RT.canManage && !i.sample) ? "" : actions}
+  </article>`;
+}
+function defaultVisit(){
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+// Live inbox updates can redraw the list while a manager is typing; carry the open form's values across.
+function keepPanelValues(){
+  if (!openPanel) return null;
+  return { when: $("wo-when")?.value, tech: $("wo-tech")?.value, note: $("wo-note")?.value, focus: document.activeElement?.id };
+}
+function restorePanelValues(v){
+  if (!v) return;
+  if (v.when != null && $("wo-when")) $("wo-when").value = v.when;
+  if (v.tech != null && $("wo-tech")) $("wo-tech").value = v.tech;
+  if (v.note != null && $("wo-note")) $("wo-note").value = v.note;
+  if (v.focus && $(v.focus)) $(v.focus).focus();
+}
+async function updateItem(item, patch){
+  const at = new Date().toISOString();
+  const upd = x => x.id === item.id ? applyUpdate(x, patch, at) : x;
+  if (item.sample){ store.set("fc_sample", sampleList().map(upd)); renderInbox(); return true; }
+  if (RT.inArtifact){
+    const ref = RT.db.collection("requests").doc(item._doc);
+    const snap = await ref.get(); if (!snap.exists) return false;
+    await ref.update({ items: (snap.data().items || []).map(upd) });   // onSnapshot redraws the inbox
+    return true;
+  }
+  store.set("fc_inbox", store.get("fc_inbox", []).map(upd)); renderInbox(); return true;
 }
 $("inboxFilter").addEventListener("click", e=>{
   const b = e.target.closest("button[data-f]"); if (!b) return;
-  inboxFilter = b.dataset.f;
+  inboxFilter = b.dataset.f; unitFilter = null;
   document.querySelectorAll("#inboxFilter button").forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
   renderInbox();
 });
-$("inboxList").addEventListener("click", async e=>{
-  const b = e.target.closest("button[data-done]"); if (!b) return;
+$("mgrTabs").addEventListener("click", e=>{ const b = e.target.closest("button[data-mt]"); if (!b) return; mgrTab = b.dataset.mt; openPanel = null; renderInbox(); });
+$("periodFilter").addEventListener("click", e=>{
+  const b = e.target.closest("button[data-p]"); if (!b) return; period = +b.dataset.p;
+  document.querySelectorAll("#periodFilter button").forEach(x=>x.setAttribute("aria-pressed", String(x===b)));
+  renderInbox();
+});
+$("mgrMain").addEventListener("click", async e=>{
+  const al = e.target.closest("button[data-alert]");
+  if (al){
+    const a = currentAlerts[+al.dataset.alert]; if (!a) return;
+    unitFilter = { ids: a.ids, unitKey: a.kind === "unit" ? a.unitKey : null, category: a.category, label: a.kind === "building" ? `${a.category} reports from ${a.units} units` : `${a.unit} · ${a.category}` };
+    mgrTab = "requests"; renderInbox(); $("unitFilterLine").scrollIntoView({ block:"start", behavior:"smooth" }); return;
+  }
+  if (e.target.closest("[data-goto]")){ mgrTab = "insights"; renderInbox(); return; }
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const act = b.dataset.act, item = allInbox().find(x => x.id === b.dataset.id);
+  const fail = msg => { const er = $("wo-err"); if (er){ er.textContent = msg; er.hidden = false; } b.disabled = false; };
+  if (act === "loadSample"){ const prop = store.get("fc_property", null) || { name:"Demo Property", code:"FC-DEMO-0000" }; store.set("fc_sample", makeSample(prop)); renderInbox(); return; }
+  if (act === "clearSample"){ try{ localStorage.removeItem("fc_sample"); }catch{} unitFilter = null; renderInbox(); return; }
+  if (act === "cancel"){ openPanel = null; renderInbox(); return; }
+  if (act === "first"){ openPanel.first = b.dataset.v === "yes"; openPanel.note = $("wo-note")?.value || ""; renderInbox(); return; }
+  if (!item) return;
+  if (act === "schedule" || act === "fix"){ openPanel = { id:item.id, kind:act }; renderInbox(); ($("wo-when") || $("wo-note"))?.focus(); return; }
   b.disabled = true;
-  const id = b.dataset.done;
-  if (RT.inArtifact){
-    try{
-      const ref = RT.db.collection("requests").doc(b.dataset.doc);
-      const snap = await ref.get(); if (!snap.exists) return;
-      const items = (snap.data().items||[]).map(x=> x.id===id ? {...x, status:"done"} : x);
-      await ref.update({ items });
-    }catch{ b.disabled=false; b.textContent="Couldn't save. Try again"; }
-  } else {
-    const list = store.get("fc_inbox", []).map(x=> x.id===id ? {...x, status:"done"} : x); store.set("fc_inbox", list); renderInbox();
+  try{
+    if (act === "seen") await updateItem(item, { status:"seen" });
+    if (act === "saveSchedule"){
+      const when = $("wo-when").value, d = new Date(when);
+      if (!when || isNaN(d)) return fail("Pick a visit date and time.");
+      const note = $("wo-note").value.trim();
+      openPanel = null;
+      await updateItem(item, { status:"scheduled", scheduledFor: d.toISOString(), tech: $("wo-tech").value.trim(), noteToResident: note, note });
+    }
+    if (act === "saveFix"){
+      if (typeof openPanel?.first !== "boolean") return fail("Choose whether it was fixed on the first visit.");
+      const note = $("wo-note").value.trim();
+      const first = openPanel.first; openPanel = null;
+      await updateItem(item, { status:"fixed", firstVisit: first, noteToResident: note || item.noteToResident || "", note });
+    }
+  }catch{ fail("Couldn't save. Try again."); }
+});
+$("mgrMain").addEventListener("change", async e=>{
+  const s = e.target.closest("select[data-act='urgency']"); if (s){
+    const item = allInbox().find(x => x.id === s.dataset.id); if (!item) return;
+    s.disabled = true;
+    try{ await updateItem(item, { mgrUrgency: s.value === item.urgency ? "" : s.value }); }
+    catch{ s.disabled = false; }
+    return;
+  }
+  const c = e.target.closest("input[data-cost]"); if (c){
+    const costs = store.get("fc_costs", {}); costs[c.dataset.cost] = c.value.replace(/[^\d.]/g, ""); store.set("fc_costs", costs); renderInbox();
   }
 });
+
+/* ---------- insights (savings dashboard) ---------- */
+function renderInsights(items){
+  const costs = store.get("fc_costs", {});
+  const k = computeInsights(items, { sinceDays: period, calloutCost: costs.callout, tripCost: costs.trip });
+  const rep = findRepeats(items);
+  if (!k.total){
+    $("insightsBody").innerHTML = `<div class="empty">No requests ${period ? "in the last 30 days" : "yet"}. Numbers appear here as residents send requests and your team updates them.${items.length ? "" : `<br><button class="btn quiet" type="button" data-act="loadSample" style="margin-top:12px">Load sample data to try it</button>`}</div>`;
+    return;
+  }
+  const hero = k.calloutSavings != null
+    ? `<div class="tile wide hero"><span class="k">After-hours call-outs avoided (est.)</span><b>${money(k.calloutSavings)}</b>
+        <span class="s">${plural(k.couldWait, "after-hours report")} could wait until morning, out of ${k.afterHours}. Assumes each would otherwise have been a ${money(Number(costs.callout))} call-out.</span></div>`
+    : `<div class="tile wide hero"><span class="k">After-hours reports that could wait</span><b>${k.couldWait}</b>
+        <span class="s">out of ${plural(k.afterHours, "after-hours report")}. Add your call-out cost below to see an estimated savings.</span></div>`;
+  const tiles = [
+    hero,
+    `<div class="tile"><span class="k">Emergencies</span><b>${k.emergencies}</b><span class="s">${k.emergencyAckMs != null ? `Median ${fmtDur(k.emergencyAckMs)} to first response` : "No response times yet"}</span></div>`,
+    `<div class="tile"><span class="k">Median time to fix</span><b>${fmtDur(k.fixMs)}</b><span class="s">${k.fixed} fixed, ${k.open} still open</span></div>`,
+    `<div class="tile"><span class="k">Fixed on first visit</span><b>${k.firstVisitRate != null ? k.firstVisitRate + "%" : "—"}</b><span class="s">${k.firstVisitRate != null ? `${plural(k.returnTrips, "return trip")}${k.returnTripCost != null ? `, about ${money(k.returnTripCost)}` : ""}` : "Recorded when you mark a request fixed"}</span></div>`,
+    `<div class="tile"><span class="k">Complete on arrival</span><b>${k.completeRate != null ? k.completeRate + "%" : "—"}</b><span class="s">Sent with a photo and no blanks left to fill</span></div>`,
+    `<div class="tile wide"><span class="k">FixCheck urgency kept by your team</span><b>${k.keptRate != null ? k.keptRate + "%" : "—"}</b><span class="s">${k.reviewed ? `Of ${plural(k.reviewed, "reviewed request")}, how many kept the urgency FixCheck suggested. Change a request's urgency in the inbox when it's wrong.` : "Shows once your team has reviewed requests."}</span></div>`
+  ].join("");
+  const maxC = Math.max(...k.byCategory.map(c => c[1]));
+  const bars = k.byCategory.map(([c, n]) => `<div class="bar" title="${esc(c)}: ${n}"><span>${esc(c)}</span><span class="v">${n}</span><div class="track"><div class="fill" style="width:${Math.max(4, Math.round(100 * n / maxC))}%"></div></div></div>`).join("");
+  $("insightsBody").innerHTML = `
+    <p class="note" style="margin:0">${plural(k.total, "request")} ${period ? "in the last 30 days" : "in total"} · ${k.open} open</p>
+    <div class="tiles">${tiles}</div>
+    <div class="card"><h2>Repeat problems</h2>
+      ${rep.alerts.length ? `<div class="stack" style="gap:8px">${rep.alerts.map((a,n)=>alertHTML(a,n)).join("")}</div>` : `<p class="note" style="margin:0">Nothing repeating in the last 60 days. FixCheck flags a unit that reports the same kind of problem twice, and 3 or more units reporting the same problem within a week.</p>`}
+    </div>
+    <div class="card"><h2>Requests by category</h2><div class="bars">${bars}</div></div>
+    <div class="card"><h2>Your costs</h2>
+      <p class="note" style="margin:0">Used only for the estimates above. Saved on this device.</p>
+      <div class="costs">
+        <div class="field"><label for="cost-callout">After-hours call-out</label><div class="money"><input type="text" inputmode="decimal" id="cost-callout" data-cost="callout" placeholder="0" value="${esc(costs.callout || "")}"></div></div>
+        <div class="field"><label for="cost-trip">Extra technician trip</label><div class="money"><input type="text" inputmode="decimal" id="cost-trip" data-cost="trip" placeholder="0" value="${esc(costs.trip || "")}"></div></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- sample data for demos ---------- */
+function makeSample(prop){
+  const now = new Date(), H = 36e5;
+  const at = (daysAgo, hour, min = 0) => { const d = new Date(now); d.setDate(d.getDate() - daysAgo); d.setHours(hour, min, 0, 0); if (d > now) d.setTime(now.getTime() - 40 * 6e4); return d; };
+  const tomorrowAt = h => { const d = new Date(now); d.setDate(d.getDate() + 1); d.setHours(h, 0, 0, 0); return d; };
+  const rows = [
+    { d:41, h:22, unit:"Apt 214", name:"Dana", cat:"Plumbing / Water", title:"Ceiling drip over bathroom sink", u:"Urgent", why:"Slow drip caught in a bucket; can wait until morning.", seen:9, sched:[10,34,"Marcus"], fixed:35, first:false },
+    { d:19, h:10, unit:"Apt 214", name:"Dana", cat:"Plumbing / Water", title:"Leak under kitchen sink", u:"Urgent", why:"Contained leak under the sink.", seen:1.5, sched:[2,26,"Marcus"], fixed:27, first:true },
+    { d:2, h:23, unit:"Apt 214", name:"Dana", cat:"Plumbing / Water", title:"Water stain spreading on bathroom ceiling", u:"Urgent", why:"Stain is growing but no active dripping.", seen:10, sched:[10.5, tomorrowAt(9), "Marcus"], note:"We'll check the unit above yours too.", b:1 },
+    { d:4, h:21, unit:"Apt 305", name:"Kayla", cat:"Heating / AC", title:"AC blowing warm air", u:"Urgent", why:"No AC in hot weather can wait until morning.", seen:11 },
+    { d:3, h:14, unit:"Apt 307", name:"Luis", cat:"Heating / AC", title:"AC not cooling, 84° inside", u:"Urgent", why:"No AC in hot weather.", seen:2 },
+    { d:1, h:22, unit:"Apt 112", name:"Priya", cat:"Heating / AC", title:"No cold air from vents", u:"Urgent", why:"No AC in hot weather." },
+    { d:12, h:23, m:10, unit:"Apt 410", name:"Sam", cat:"Gas", title:"Gas smell near the stove", u:"Emergency", why:"A gas smell is always an emergency.", seen:0.12, fixed:2.5, first:true },
+    { d:25, h:1, m:40, unit:"Apt 220", name:"Tasha", cat:"Doors / Locks / Windows", title:"Front door won't lock", u:"Emergency", why:"An entry door that won't lock is a security emergency.", seen:0.25, fixed:3, first:true },
+    { d:9, h:11, unit:"Apt 118", name:"Chris", cat:"Electrical", title:"Bedroom outlet stopped working", u:"Routine", why:"One dead outlet, no sparks or burning smell.", seen:3, sched:[4,50,"Andre"], fixed:51, first:true },
+    { d:6, h:20, unit:"Apt 302", name:"Jordan", cat:"Appliance", title:"Fridge not keeping food cold", u:"Urgent", why:"Broken fridge can wait until morning.", seen:12, sched:[12.5,15,"Andre"], fixed:16, first:false },
+    { d:15, h:13, unit:"Apt 205", name:"Mei", cat:"Other", title:"Closet door off its track", u:"Routine", why:"Cosmetic, no safety issue.", seen:20, fixed:70, first:true },
+    { d:30, h:9, unit:"Apt 108", name:"Omar", cat:"Pests", title:"Ants in the kitchen", u:"Routine", why:"Small pest sighting.", seen:4, sched:[5,48,"Pest vendor"], fixed:49, first:true },
+    { d:4, h:19, unit:"Apt 216", name:"Ava", cat:"Electrical", title:"Bathroom fan very loud", u:"Urgent", mu:"Routine", why:"Unusual noise from an electrical fan.", seen:14 },
+    { d:20, h:23, unit:"Apt 401", name:"Ben", cat:"Plumbing / Water", title:"Toilet keeps running", u:"Routine", why:"Running toilet, still usable.", seen:10, fixed:30, first:true, b:2, p:false },
+    { d:8, h:0, m:30, unit:"Apt 118", name:"Chris", cat:"Ceiling / Walls / Floors", title:"Crack above bedroom window", manual:true, u:"Urgent", seen:9 },
+    { d:33, h:22, unit:"Apt 302", name:"Jordan", cat:"Plumbing / Water", title:"Kitchen sink draining slowly", u:"Routine", ru:"Urgent", why:"Slow drain.", seen:11, fixed:40, first:true },
+  ];
+  return rows.map((r, idx) => {
+    const c = at(r.d, r.h, r.m || 0), iso = x => (x instanceof Date ? x : new Date(c.getTime() + x * H)).toISOString();
+    const it = { id: "WO-S" + String(idx + 1).padStart(2, "0"), sample: true, createdAt: c.toISOString(), localTime: fmtTime(c), afterHours: isAfterHours(c),
+      name: r.name, unit: r.unit, prop: prop.name, propCode: prop.code, urgency: r.ru || r.u, suggested: r.u, aiUrgency: r.manual ? null : r.u,
+      aiReason: r.manual ? "" : (r.why || ""), safety: "", category: r.cat, title: r.title, request: r.title + ". It's in my apartment and I'd like it looked at.",
+      answers: [], checklistYes: [], photo: null, manualReview: !!r.manual, reviewReason: r.manual ? "The AI check couldn't be reached" : "",
+      status: "new", app: APP_VERSION, blanksLeft: r.b || 0, hasPhoto: r.p !== false, history: [{ s:"new", at: c.toISOString(), note:"" }] };
+    if (r.seen != null){ it.history.push({ s:"seen", at: iso(r.seen), note:"" }); it.status = "seen"; }
+    if (r.mu){ it.mgrUrgency = r.mu; it.history.push({ s:"urgency", at: iso((r.seen || 0) + 0.1), note:`Urgency changed to ${r.mu}` }); }
+    if (r.sched){ it.history.push({ s:"scheduled", at: iso(r.sched[0]), note: r.note || "" }); it.status = "scheduled"; it.scheduledFor = iso(r.sched[1]); it.tech = r.sched[2]; it.noteToResident = r.note || ""; }
+    if (r.fixed != null){ it.history.push({ s:"fixed", at: iso(r.fixed), note:"" }); it.status = "fixed"; it.firstVisit = r.first; }
+    it.full = composeFinal(it);
+    return it;
+  });
+}
 
 /* ---------- tabs + boot ---------- */
 let lastResidentView = "compose";
@@ -980,20 +1417,47 @@ $("tab-report").onclick = ()=> show(profile ? (["result","sent","thinking"].incl
 $("tab-inbox").onclick = ()=>{
   if (role === "manager"){ renderInbox(); show("inbox"); return; }
   const vis = ["profile","compose","thinking","result","sent"].find(v=>!$("v-"+v).hidden); if (vis) lastResidentView = vis;
-  renderOutbox(); show("outbox");
+  renderOutbox(store.get("fc_outbox", [])); show("outbox");
+  syncOutbox().then(renderOutbox);
 };
 const VIA = { direct:"Sent with your email or text app", device:"Sent to your property's FixCheck inbox", inbox:"Sent to your property's FixCheck inbox", copy:"Copied to send yourself" };
-function renderOutbox(){
-  const ob = store.get("fc_outbox", []);
-  if (!ob.length){ $("outboxList").innerHTML = `<div class="empty">No requests yet. When you send one, it shows up here with its urgency and how it was sent.</div>`; return; }
-  $("outboxList").innerHTML = ob.map(i=>`<article class="inbox-item ${esc(i.urgency)}">
-    <div class="inbox-head">${i.photo ? `<img src="${esc(i.photo)}" alt="Your photo">` : ""}<div class="t">
-      <div class="pills"><span class="pill ${esc(i.urgency)}">${esc(i.urgency)}</span><span class="pill cat">${esc(i.category)}</span></div>
-      <h3>${esc(i.title)}</h3><div class="mono">${esc(i.id)} · ${esc(i.localTime)}</div></div></div>
-    <div class="note">${esc(VIA[i.via] || "Sent")}</div>
-    <details><summary>Full request</summary><div class="reqtext">${esc(i.full || i.request)}</div></details>
-  </article>`).join("");
+const TRACKED = ["status","history","scheduledFor","tech","noteToResident","firstVisit","mgrUrgency"];
+// Pull the latest status for each request from the property inbox (the manager updates it there).
+async function syncOutbox(){
+  let ob = store.get("fc_outbox", []);
+  if (!ob.length) return ob;
+  let source = [];
+  if (RT.inArtifact){
+    if (!RT.db || !RT.uid) return ob;
+    try{ const snap = await RT.db.collection("requests").doc(RT.uid).get(); source = snap.exists ? (snap.data().items || []) : []; }catch{ return ob; }
+  } else source = store.get("fc_inbox", []);
+  const byId = Object.fromEntries(source.map(x => [x.id, x]));
+  ob = ob.map(o => { const s = byId[o.id]; if (!s) return o; const u = {...o}; for (const k of TRACKED) if (s[k] !== undefined) u[k] = s[k]; return u; });
+  store.set("fc_outbox", ob);
+  return ob;
 }
+function renderOutbox(ob){
+  if (!ob.length){ $("outboxList").innerHTML = `<div class="empty">No requests yet. When you send one, it shows up here with its urgency and how it was sent.</div>`; return; }
+  $("outboxList").innerHTML = ob.map(i=>{
+    const st = statusOf(i), tracked = i.via === "inbox" || i.via === "device", fu = finalUrgency(i);
+    return `<article class="inbox-item ${esc(fu)} ${st==="fixed"?"done":""}">
+    <div class="inbox-head">${i.photo ? `<img src="${esc(i.photo)}" alt="Your photo">` : ""}<div class="t">
+      <div class="pills"><span class="pill ${esc(fu)}">${esc(fu)}</span>${statusPill(i)}<span class="pill cat">${esc(i.category)}</span></div>
+      <h3>${esc(i.title)}</h3><div class="mono">${esc(i.id)} · ${esc(i.localTime)}</div></div></div>
+    ${i.noteToResident ? `<div class="toresident"><strong>From maintenance:</strong> ${esc(i.noteToResident)}</div>` : ""}
+    ${i.mgrUrgency && i.mgrUrgency !== i.urgency ? `<div class="note">Maintenance changed the urgency to ${esc(i.mgrUrgency)}.</div>` : ""}
+    ${timelineHTML(i, true)}
+    <div class="note">${esc(VIA[i.via] || "Sent")}${tracked ? "" : ". Your manager's updates don't show here, so mark it fixed yourself to keep track."}</div>
+    ${!tracked && st !== "fixed" ? `<div><button class="btn quiet" type="button" data-selffix="${esc(i.id)}">It's fixed</button></div>` : ""}
+    <details><summary>Full request</summary><div class="reqtext">${esc(i.full || i.request)}</div></details>
+  </article>`; }).join("");
+}
+$("outboxList").addEventListener("click", e=>{
+  const b = e.target.closest("button[data-selffix]"); if (!b) return;
+  const at = new Date().toISOString();
+  const ob = store.get("fc_outbox", []).map(x => x.id === b.dataset.selffix ? applyUpdate(x, { status:"fixed" }, at) : x);
+  store.set("fc_outbox", ob); renderOutbox(ob);
+});
 let role = store.get("fc_role", null);
 document.querySelectorAll(".rolecard").forEach(b=> b.onclick = ()=>{
   role = b.dataset.role; store.set("fc_role", role);

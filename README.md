@@ -21,6 +21,10 @@ FixCheck is for apartment renters in metro Atlanta. When something breaks, you t
 1. Pick "I manage a property."
 2. Enter the property name. You get a code like `FC-PEAC-7K3Q` to give to residents.
 3. Requests from residents who used your code show up in your inbox, emergencies first.
+4. Track each request as a work order: **Mark seen**, **Schedule visit** (time, technician, note to the resident), and **Mark fixed** (with "fixed on the first visit?"). You can also change the urgency if FixCheck got it wrong. Residents see the status and your note under **My requests**.
+5. **Repeat-problem alerts** appear at the top of the inbox: the same unit reporting the same kind of problem twice in 60 days, and 3 or more units reporting the same problem within 7 days (a possible building-wide issue). Tap **Show** to see those requests.
+6. The **Insights** tab shows what FixCheck is saving you: after-hours reports that could wait until morning (and an estimated dollar amount once you enter your own call-out cost), time to first response on emergencies, time to fix, first-visit fix rate, how many requests arrived complete, and how often your team kept FixCheck's urgency.
+7. For demos, **Load sample data** fills the inbox with 16 example requests. They stay on that device and can be removed anytime.
 
 **Safety rules that don't depend on the AI**
 - Answering "Yes" to any safety question (gas smell, smoke, water you can't stop, CO alarm, door won't lock) always makes it an Emergency.
@@ -51,7 +55,8 @@ Only in Vercel's environment variables. The browser never sees it, and it should
 | `api/triage.js` | The server function that calls Gemini |
 | `lib/shared.js` | The AI prompt and answer checks (generated) |
 | `server.js` | Run the app on your own computer |
-| `test/triage.test.js` | Tests, no key needed: `node test/triage.test.js` |
+| `test/triage.test.js` | AI call tests, no key needed |
+| `test/insights.test.js` | Work order, repeat alert and Insights tests. Run all tests with `npm test` |
 
 ## Run it on your computer
 

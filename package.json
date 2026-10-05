@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "FixCheck: AI urgency check and request drafting for apartment maintenance (The InnovAItors, ATL Cup 2026)",
-  "scripts": { "build": "node build.js", "dev": "node server.js", "test": "node test/triage.test.js" },
+  "scripts": { "build": "node build.js", "dev": "node server.js", "test": "node test/triage.test.js && node test/insights.test.js" },
   "engines": { "node": ">=18" }
 }
