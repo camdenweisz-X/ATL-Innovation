@@ -64,7 +64,7 @@ export function Report() {
         <TopBar title="Report a problem" />
         <div className="page">
           <Empty icon="home" title="Connect your home first" action={<Link className="btn" to="/settings/places">Add a home</Link>}>
-            Add your property code, or your landlord's email or phone, so FixCheck knows where to send requests.
+            Add your property code, or your landlord's email or phone, so CanItWait knows where to send requests.
           </Empty>
         </div>
       </>
@@ -141,6 +141,7 @@ export function Report() {
         description: draft.desc.trim() || null, body, answers, location_in_home: draft.room || null,
         entry_permission: review.entry, entry_notes: review.entry ? review.entryNotes.trim() || null : null,
         has_pets: review.pets, availability: review.times.join(", ") || null, photo_path, manual_review: !ai,
+        after_hours: review.afterHours, blanks_left: Math.min(50, (body.match(/\[[^\]\n]{1,80}\]/g) || []).length),
       };
       const { data, error } = await supabase.from("requests").insert(row).select("id, ref").single();
       if (error) throw error;
@@ -230,7 +231,7 @@ export function Report() {
         {view === "checking" && (
           <div className="stack-lg">
             <div><h1 className="h1">Checking urgency</h1>
-              <p className="lede">{resumeNote ? "Picking up where you left off…" : "Usually 10 to 30 seconds. You can switch apps; FixCheck picks up when you come back."}</p></div>
+              <p className="lede">{resumeNote ? "Picking up where you left off…" : "Usually 10 to 30 seconds. You can switch apps; CanItWait picks up when you come back."}</p></div>
             <div className="card pad stack">
               <div className="row">{draft.thumb && <img src={draft.thumb} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover" }} />}<div className="small muted grow">{draft.desc.slice(0, 120)}</div></div>
               <ol className="stages">

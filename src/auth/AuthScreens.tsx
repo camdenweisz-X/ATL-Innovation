@@ -7,7 +7,7 @@ import { Button, Field } from "../ui/kit";
 import { Icon, GoogleMark } from "../ui/icons";
 
 export function Brand() {
-  return <Link to="/" className="brand"><span className="brand-mark"><Icon name="brand" /></span>FixCheck</Link>;
+  return <Link to="/" className="brand"><span className="brand-mark"><Icon name="brand" /></span><span>Can<span className="brand-it">It</span>Wait</span></Link>;
 }
 
 function AuthFrame({ title, lede, children, foot }: { title: string; lede?: string; children: React.ReactNode; foot?: React.ReactNode }) {
@@ -65,7 +65,7 @@ export function Landing() {
             <div className="stack">
               <span className="eyebrow">For renters and property managers</span>
               <h1 className="display">Report what broke. Know how urgent it is.</h1>
-              <p className="lede" style={{ fontSize: 18 }}>Snap a photo and FixCheck tells you whether to call now or wait until morning, then writes a request maintenance can act on the first time.</p>
+              <p className="lede" style={{ fontSize: 18 }}>Snap a photo and CanItWait tells you whether to call now or wait until morning, then writes a request maintenance can act on the first time.</p>
             </div>
             <div className="row-wrap">
               <Link to="/signup" className="btn">Create a free account</Link>
@@ -112,7 +112,7 @@ export function SignIn() {
     nav(safeFrom(loc.state), { replace: true });
   };
   return (
-    <AuthFrame title="Sign in" foot={<>New to FixCheck? <Link to="/signup">Create an account</Link></>}>
+    <AuthFrame title="Sign in" foot={<>New to CanItWait? <Link to="/signup">Create an account</Link></>}>
       <JoinNotice />
       <GoogleButton />
       <div className="divider">or</div>
@@ -163,7 +163,7 @@ export function SignUp() {
         <Field label="Password" hint="At least 8 characters." htmlFor={pId}><input id={pId} className="input" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} /></Field>
         {err && <p className="err" role="alert"><Icon name="alert" width={16} height={16} />{err}</p>}
         <Button type="submit" block loading={busy}>Create account</Button>
-        <p className="xs muted center" style={{ margin: 0 }}>FixCheck uses AI to suggest urgency. Don't put sensitive personal details in reports.</p>
+        <p className="xs muted center" style={{ margin: 0 }}>CanItWait uses AI to suggest urgency. Don't put sensitive personal details in reports.</p>
       </form>
     </AuthFrame>
   );
@@ -235,7 +235,7 @@ export function JoinLink() {
 
 export function SetupNeeded() {
   return (
-    <AuthFrame title="FixCheck isn't connected yet" lede="This deployment is missing its Supabase settings.">
+    <AuthFrame title="CanItWait isn't connected yet" lede="This deployment is missing its Supabase settings.">
       <div className="notice warn"><Icon name="info" /><div className="small">Add <span className="mono">VITE_SUPABASE_URL</span> and <span className="mono">VITE_SUPABASE_ANON_KEY</span> in Vercel → Settings → Environment Variables, then redeploy. See SETUP.md in the repo.</div></div>
     </AuthFrame>
   );

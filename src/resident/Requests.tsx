@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useSession } from "../lib/session";
-import { ago } from "../lib/format";
+import { ago, visitTime } from "../lib/format";
+import { finalUrgency } from "../../shared/workorders.js";
 import type { RequestRow } from "../lib/types";
 import { Empty, Skeleton, StatusBadge, UrgencyBadge } from "../ui/kit";
 import { Icon } from "../ui/icons";
@@ -42,10 +43,11 @@ export function MyRequests() {
         ) : (
           <div className="list">
             {shown.map((r) => (
-              <Link key={r.id} to={`/r/requests/${r.id}`} className={`req ${r.urgency} ${["resolved", "canceled"].includes(r.status) ? "closed" : ""}`}>
+              <Link key={r.id} to={`/r/requests/${r.id}`} className={`req ${finalUrgency(r)} ${["resolved", "canceled"].includes(r.status) ? "closed" : ""}`}>
                 <div className="grow">
-                  <div className="row-wrap" style={{ gap: 6 }}><UrgencyBadge u={r.urgency} /><StatusBadge s={r.status} /></div>
+                  <div className="row-wrap" style={{ gap: 6 }}><UrgencyBadge u={finalUrgency(r)} /><StatusBadge s={r.status} /></div>
                   <div className="title">{r.title}</div>
+                  {r.status === "scheduled" && r.scheduled_for && <div className="xs" style={{ fontWeight: 600, color: "var(--info)", margin: "2px 0" }}>Visit {visitTime(r.scheduled_for)}</div>}
                   <div className="meta">{placeName(r)}{r.unit ? ` · ${r.unit}` : ""} · updated {ago(r.updated_at)}{ago(r.updated_at) === "just now" ? "" : " ago"}</div>
                 </div>
                 <Icon name="chevronRight" width={18} height={18} style={{ color: "var(--muted)", alignSelf: "center" }} />

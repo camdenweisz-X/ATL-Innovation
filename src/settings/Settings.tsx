@@ -105,7 +105,7 @@ export function Settings() {
         <div className="stack-sm">
           <Button variant="secondary" block icon="logout" onClick={async () => { await signOut(); nav("/", { replace: true }); }}>Sign out</Button>
           <Button variant="danger-outline" block icon="trash" onClick={() => setDelOpen(true)}>Delete account</Button>
-          <p className="xs muted center">FixCheck {APP_VERSION} · The InnovAItors</p>
+          <p className="xs muted center">CanItWait {APP_VERSION} · The InnovAItors</p>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export function Places() {
               <div key={p.key} className="list-row" style={{ cursor: "default" }}>
                 <span className="avatar" style={{ borderRadius: 10 }}><Icon name={p.kind === "property" ? "building" : "home"} width={18} height={18} /></span>
                 <div className="grow"><div style={{ fontWeight: 650 }}>{p.label}{p.unit ? ` · ${p.unit}` : ""}</div>
-                  <div className="small muted">{p.kind === "property" ? "Requests go to the FixCheck inbox" : `Requests go by ${[p.place.contact_email && "email", p.place.contact_phone && "text"].filter(Boolean).join(" or ")}`}</div></div>
+                  <div className="small muted">{p.kind === "property" ? "Requests go to the CanItWait inbox" : `Requests go by ${[p.place.contact_email && "email", p.place.contact_phone && "text"].filter(Boolean).join(" or ")}`}</div></div>
                 {p.kind === "external"
                   ? <button className="btn ghost sm" onClick={() => setSheet({ edit: p.place })}>Edit</button>
                   : <button className="btn ghost sm" onClick={() => setSheet({ leave: p.membership })}>Leave</button>}
@@ -199,7 +199,7 @@ export function Places() {
         )}
         <div className="stack-sm">
           <Button block icon="key" onClick={() => setSheet("join")}>Join with a property code</Button>
-          <Button block variant="secondary" icon="plus" onClick={() => setSheet("external")}>Add a home whose landlord isn't on FixCheck</Button>
+          <Button block variant="secondary" icon="plus" onClick={() => setSheet("external")}>Add a home whose landlord isn't on CanItWait</Button>
         </div>
         {memberships.some((m) => m.role === "resident") && <p className="xs muted">Leaving a property stops new reports there. Requests you already sent stay in your list.</p>}
       </div>

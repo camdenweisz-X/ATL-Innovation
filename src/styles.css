@@ -1,4 +1,4 @@
-/* FixCheck design system.
+/* CanItWait design system.
    Direction: calm and trustworthy, like a utility or bank app. Neutral surfaces, one blue for actions,
    color reserved for meaning (urgency and status). One column on phones; sidebar + split view on desktop. */
 
@@ -138,6 +138,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- brand ---------- */
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 18px; letter-spacing: -.01em; text-decoration: none; color: var(--ink); }
+.brand-it { color: var(--accent); }
 .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; flex: none; }
 .brand-mark svg { width: 18px; height: 18px; color: var(--accent-ink); }
 
@@ -393,3 +394,22 @@ a.list-row:hover, button.list-row:hover { background: var(--surface-2); }
 
 .code-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; }
 .code-box .code { font-family: var(--mono); font-size: 20px; font-weight: 650; letter-spacing: .08em; user-select: all; }
+
+/* ---------- insights ---------- */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 720px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile.wide { grid-column: 1 / -1; }
+.tile.hero { background: var(--accent-soft); border-color: transparent; }
+.tile .k { font-size: 12.5px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.tile b { font-size: 30px; line-height: 1.1; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.tile.hero b { color: var(--accent); font-size: 36px; }
+.tile .s { font-size: 13.5px; color: var(--muted); }
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 14px; }
+.bar .v { font-variant-numeric: tabular-nums; font-weight: 650; }
+.bar .track { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.money { position: relative; }
+.money::before { content: "$"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.money .input { padding-left: 28px; }

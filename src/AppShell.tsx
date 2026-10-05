@@ -32,6 +32,7 @@ export function AppShell() {
     workspace === "manager"
       ? [
           { to: "/m", label: "Inbox", icon: "inbox", end: true, badge: emergencies },
+          { to: "/m/insights", label: "Insights", icon: "chart" },
           { to: "/m/properties", label: "Properties", icon: "building" },
           { to: "/settings", label: "Settings", icon: "settings" },
         ]

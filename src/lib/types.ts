@@ -14,10 +14,15 @@ export interface RequestRow {
   description: string | null; body: string; answers: { q: string; a: string }[]; location_in_home: string | null;
   entry_permission: boolean | null; entry_notes: string | null; has_pets: boolean | null; availability: string | null;
   photo_path: string | null; manual_review: boolean; status: Status; created_at: string; updated_at: string;
+  after_hours: boolean; blanks_left: number; has_photo: boolean;
+  scheduled_for: string | null; tech: string | null; first_visit: boolean | null; mgr_urgency: Urgency | null;
 }
-export interface RequestEvent { id: string; request_id: string; actor_id: string | null; kind: "created" | "status" | "message"; status: Status | null; body: string | null; created_at: string; }
+export interface RequestEvent {
+  id: string; request_id: string; actor_id: string | null; kind: "created" | "status" | "message" | "urgency"; status: Status | null;
+  body: string | null; created_at: string; detail: { scheduled_for?: string; tech?: string; first_visit?: boolean; urgency?: Urgency } | null;
+}
 
-/** A place a resident can report for: a FixCheck property (membership) or an outside landlord. */
+/** A place a resident can report for: a CanItWait property (membership) or an outside landlord. */
 export type Place =
   | { kind: "property"; key: string; membership: Membership; property: Property; label: string; unit: string | null }
   | { kind: "external"; key: string; place: ExternalPlace; label: string; unit: string | null };

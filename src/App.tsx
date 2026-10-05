@@ -7,6 +7,7 @@ import { Onboarding } from "./onboarding/Onboarding";
 import { Report } from "./resident/Report";
 import { MyRequests, ResidentRequestPage } from "./resident/Requests";
 import { Inbox } from "./manager/Inbox";
+import { Insights } from "./manager/Insights";
 import { PropertiesList, PropertyDetail } from "./manager/Properties";
 import { Settings, Places } from "./settings/Settings";
 import { Spinner } from "./ui/kit";
@@ -40,7 +41,7 @@ function ManagerRequestRedirect() { const { id } = useParams(); return <Navigate
 export function App() {
   const { ready, loading, session } = useSession();
   if (!configured) return <SetupNeeded />;
-  if (!ready || (session && loading)) return <div style={{ paddingTop: "30vh" }}><Spinner label="Loading FixCheck" /></div>;
+  if (!ready || (session && loading)) return <div style={{ paddingTop: "30vh" }}><Spinner label="Loading CanItWait" /></div>;
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -57,6 +58,7 @@ export function App() {
         <Route path="/m" element={<Inbox />} />
         <Route path="/m/requests/:id" element={<Inbox />} />
         <Route path="/m/r/:id" element={<ManagerRequestRedirect />} />
+        <Route path="/m/insights" element={<Insights />} />
         <Route path="/m/properties" element={<PropertiesList />} />
         <Route path="/m/properties/:id" element={<PropertyDetail />} />
         <Route path="/settings" element={<Settings />} />

@@ -1,4 +1,4 @@
-# Setting up FixCheck
+# Setting up CanItWait
 
 Everything here runs on free plans: Supabase (database, accounts, photos), Vercel (hosting), Google Gemini (AI), and optionally Resend (email). Plan on about 30 minutes the first time.
 
@@ -18,7 +18,7 @@ You'll collect these values along the way:
 ## 1. Create the database (Supabase)
 
 1. Go to supabase.com, sign up, and create a new project. Pick a strong database password and save it somewhere. Choose the US East region.
-2. When the project is ready, open **SQL Editor**, click **New query**, paste the whole file `supabase/migrations/0001_fixcheck.sql`, and click **Run**. It should finish with "Success. No rows returned". It's safe to run again later if the file changes.
+2. When the project is ready, open **SQL Editor**, click **New query**, paste the whole file `supabase/migrations/0001_canitwait.sql`, and click **Run**. It should finish with "Success. No rows returned". It's safe to run again later if the file changes.
 3. Open **Project Settings → API** and copy the Project URL, the `anon` key and the `service_role` key.
 
 ## 2. Set up sign-in (Supabase → Authentication)
@@ -47,18 +47,22 @@ Go to aistudio.google.com/apikey and create a key. The free tier is enough for t
 2. On vercel.com, open your existing project (or **Add New → Project** and import the repo). The included `vercel.json` sets the framework to Vite and the output to `dist`, so leave the build settings alone.
 3. **Settings → Environment Variables:** add every value from the table above (skip Resend for now if you like). Apply them to Production and Preview.
 4. **Deployments → Redeploy** so the new variables take effect.
-5. Open the site. If you see "FixCheck isn't connected yet", the two `VITE_SUPABASE_...` variables are missing or need a redeploy.
+5. Open the site. If you see "CanItWait isn't connected yet", the two `VITE_SUPABASE_...` variables are missing or need a redeploy.
 
 ## 5. Email notifications (optional, Resend)
 
 1. Sign up at resend.com and create an API key.
 2. To email anyone other than yourself, Resend needs a **domain you own**, verified with a few DNS records. Without one, Resend only delivers to your own Resend account email.
-3. Set `RESEND_API_KEY` and `RESEND_FROM` (for example `FixCheck <notifications@yourdomain.com>`) in Vercel and redeploy.
+3. Set `RESEND_API_KEY` and `RESEND_FROM` (for example `CanItWait <notifications@yourdomain.com>`) in Vercel and redeploy.
 4. Use the same domain for Supabase sign-up emails: in Supabase SMTP settings, use host `smtp.resend.com`, port `465`, user `resend`, and your Resend API key as the password.
 
 Without Resend, everything still works; people just see updates in the app instead of getting emails.
 
 ## 6. Try it end to end
+
+Fastest demo: create a manager account, add any property, then tap **Load sample data** on the Properties screen. You get a separate sample property with six weeks of requests, repeat alerts and a filled-in Insights screen. Delete it from Properties when you're done.
+
+To test the full flow with two people:
 
 1. Create a manager account. Choose **I manage properties** and add a property. Copy the resident code from **Properties**.
 2. In a private browser window (or on your phone), create a resident account. Choose **I rent a home** and enter the code and a unit.
@@ -79,7 +83,7 @@ The AI check calls `/api/triage`, which only exists on Vercel. To test it locall
 ## Tests
 
 ```bash
-npm test          # server function tests + 50 database access-rule tests (no keys needed)
+npm test          # server, Insights math and 64 database access-rule tests (no keys needed)
 npm run build     # type check and production build
 ```
 
@@ -92,7 +96,7 @@ npm run build     # type check and production build
 
 ## Security notes
 
-- Row Level Security is on for every table. Residents see only their own requests; managers see only requests for properties they manage. `supabase/tests/rls.test.mjs` checks 50 of these rules.
+- Row Level Security is on for every table. Residents see only their own requests; managers see only requests for properties they manage. `supabase/tests/rls.test.mjs` checks 64 of these rules.
 - The service-role key and Gemini key live only in Vercel's server environment.
 - The AI result is attached by the resident's app. A technical user could edit the "AI check" text before sending. Treat it as the resident's report, not a verified record.
 - Photos of deleted properties stay in storage until removed in the Supabase dashboard. Deleting an account removes that person's photos.

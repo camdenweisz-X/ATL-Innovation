@@ -24,9 +24,9 @@ alter default privileges in schema public grant all on functions to anon, authen
 alter default privileges in schema public grant all on sequences to anon, authenticated;
 `;
 await db.exec(stub);
-await db.exec(fs.readFileSync(new URL("../migrations/0001_fixcheck.sql", import.meta.url), "utf8"));
+await db.exec(fs.readFileSync(new URL("../migrations/0001_canitwait.sql", import.meta.url), "utf8"));
 // run migration twice to prove it is re-runnable
-await db.exec(fs.readFileSync(new URL("../migrations/0001_fixcheck.sql", import.meta.url), "utf8"));
+await db.exec(fs.readFileSync(new URL("../migrations/0001_canitwait.sql", import.meta.url), "utf8"));
 console.log("migration ran twice OK");
 
 const U = { M:"00000000-0000-0000-0000-00000000000a", R:"00000000-0000-0000-0000-00000000000b", O:"00000000-0000-0000-0000-00000000000c", M2:"00000000-0000-0000-0000-00000000000d", R2:"00000000-0000-0000-0000-00000000000e" };
@@ -131,6 +131,32 @@ await throws("co-manager removes the owner", ()=>as("M2","select public.remove_m
 const m2mid = (await as("M","select id from memberships where user_id=$1 and property_id=$2 and role='manager'",[U.M2,pid])).rows[0].id;
 await as("M","select public.remove_membership($1)",[m2mid]);
 ok("owner can remove a co-manager", (await as("M","select count(*)::int n from memberships where property_id=$1 and role='manager'",[pid])).rows[0].n===1);
+// work orders
+await as("M","select public.set_request_status($1,'scheduled','Bring a ladder', now() + interval '1 day', 'Marcus')",[req]);
+const wo = (await as("R","select status, tech, scheduled_for from requests where id=$1",[req])).rows[0];
+ok("manager scheduled with tech and time", wo.status==="scheduled" && wo.tech==="Marcus" && !!wo.scheduled_for);
+const evd = (await as("R","select detail from request_events where request_id=$1 and kind='status' order by created_at desc limit 1",[req])).rows[0].detail;
+ok("schedule event records visit details", evd && evd.tech==="Marcus");
+// An open ("new") request the resident may still edit: work-order fields stay locked.
+const openReq = (await as("R",`insert into requests (property_id,title,category,urgency,body) values ($1,'Bulb','Electrical','Routine','Bulb out') returning id`,[pid])).rows[0].id;
+await throws("resident changes tech directly", ()=>as("R","update requests set tech='Me' where id=$1",[openReq]));
+await throws("resident sets manager urgency directly", ()=>as("R","update requests set mgr_urgency='Emergency' where id=$1",[openReq]));
+ok("closed request can't be edited by resident", (await as("R","update requests set body='changed' where id=$1 returning id",[req])).rows.length===0);
+await throws("resident fakes event detail", ()=>as("R","insert into request_events (request_id, kind, body, detail) values ($1,'message','hi','{\"first_visit\":true}')",[req]));
+await as("M","select public.set_request_urgency($1,'Routine')",[req]);
+ok("manager overrode urgency", (await as("R","select mgr_urgency from requests where id=$1",[req])).rows[0].mgr_urgency==="Routine");
+await throws("resident overrides urgency", ()=>as("R","select public.set_request_urgency($1,'Emergency')",[req]));
+await as("M","select public.set_request_status($1,'resolved',null,null,null,false)",[req]);
+ok("fixed with return trip recorded", (await as("M","select first_visit from requests where id=$1",[req])).rows[0].first_visit===false);
+const presetReq = (await as("R",`insert into requests (property_id,title,category,urgency,body,tech,mgr_urgency,first_visit) values ($1,'x','Other','Routine','x','Hacker','Emergency',true) returning tech, mgr_urgency, first_visit`,[pid])).rows[0];
+ok("residents can't preset work-order fields", presetReq.tech===null && presetReq.mgr_urgency===null && presetReq.first_visit===null);
+// sample data
+const demo = (await as("R2","select public.load_demo_data() as id")).rows[0].id;
+ok("sample data: 16 requests", (await as("R2","select count(*)::int n from requests where property_id=$1",[demo])).rows[0].n===16);
+ok("sample data: backdated history", (await as("R2","select count(*)::int n from request_events e join requests q on q.id=e.request_id where q.property_id=$1 and e.created_at < now() - interval '30 days'",[demo])).rows[0].n>0);
+ok("sample data hidden from others", (await as("M","select count(*)::int n from requests where property_id=$1",[demo])).rows[0].n===0);
+await as("R2","delete from properties where id=$1",[demo]);
+ok("deleting sample property removes it", (await as("R2","select count(*)::int n from requests where property_id=$1",[demo])).rows[0].n===0);
 await db.exec("reset role");
 ok("api_usage hidden from clients", (await as("R","select count(*)::int n from api_usage")).rows[0].n===0);
 console.log(`\n${pass} passed, ${fail} failed`);

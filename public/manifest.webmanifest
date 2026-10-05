@@ -1,6 +1,6 @@
 {
-  "name": "FixCheck",
-  "short_name": "FixCheck",
+  "name": "CanItWait",
+  "short_name": "CanItWait",
   "description": "Report apartment maintenance problems and get an AI urgency call.",
   "start_url": "/",
   "display": "standalone",

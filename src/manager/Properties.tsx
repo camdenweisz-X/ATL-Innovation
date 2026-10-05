@@ -8,6 +8,7 @@ import { Button, CopyButton, Empty, Field, Sheet, Skeleton, useToast } from "../
 import { Icon } from "../ui/icons";
 import { TopBar } from "../AppShell";
 import { CreatePropertyForm, JoinForm } from "../shared-screens/PlaceForms";
+import { SampleButton } from "./Inbox";
 
 export function PropertiesList() {
   const { managed, refresh } = useSession();
@@ -43,6 +44,12 @@ export function PropertiesList() {
           </div>
         )}
         <button className="btn ghost sm mobile-only" style={{ alignSelf: "flex-start" }} onClick={() => setJoinOpen(true)}>Join another manager's team</button>
+        {!managed.some((p) => p.name.startsWith("Sample data")) && (
+          <div className="card pad row" style={{ alignItems: "flex-start" }}>
+            <div className="grow small"><b>Trying CanItWait out?</b><div className="muted">Load a separate sample property with six weeks of requests, repeat problems and a filled-in Insights screen. Delete it any time.</div></div>
+            <SampleButton onDone={refresh} />
+          </div>
+        )}
       </div>
       <Sheet open={open} onClose={() => { setOpen(false); setParams({}); }} title="Add a property">
         <CreatePropertyForm onDone={async (id) => { await refresh(); setOpen(false); nav(`/m/properties/${id}`); }} />
@@ -111,7 +118,7 @@ export function PropertyDetail() {
             <div className="code-box"><span className="code">{codes.resident_code}</span><CopyButton text={codes.resident_code} /></div>
             <div className="row-wrap">
               <CopyButton text={link} label="Copy invite link" />
-              {typeof navigator.share === "function" && <Button variant="secondary" size="sm" icon="share" onClick={() => navigator.share({ title: `Join ${prop.name} on FixCheck`, text: `Report maintenance problems for ${prop.name} with FixCheck. Your code is ${codes.resident_code}.`, url: link }).catch(() => {})}>Share</Button>}
+              {typeof navigator.share === "function" && <Button variant="secondary" size="sm" icon="share" onClick={() => navigator.share({ title: `Join ${prop.name} on CanItWait`, text: `Report maintenance problems for ${prop.name} with CanItWait. Your code is ${codes.resident_code}.`, url: link }).catch(() => {})}>Share</Button>}
             </div>
           </>)}
         </section>

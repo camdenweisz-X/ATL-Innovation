@@ -34,3 +34,24 @@ export function ageLevel(created: string, urgency: string, status: string): "" |
   if (h > limit) return "slow";
   return "";
 }
+
+/** "Tue, Oct 6 at 9:00 AM" */
+export function visitTime(iso: string): string {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+}
+/** Short human duration: "15m", "3.5h", "2.1d". */
+export function duration(ms: number | null): string {
+  if (ms == null) return "—";
+  const m = ms / 6e4;
+  if (m < 60) return `${Math.max(1, Math.round(m))}m`;
+  const h = m / 60;
+  if (h < 48) return `${h < 10 ? Math.round(h * 10) / 10 : Math.round(h)}h`;
+  const d = h / 24;
+  return `${d < 10 ? Math.round(d * 10) / 10 : Math.round(d)}d`;
+}
+export const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+export const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+export function ordinal(n: number): string { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+/** Value for <input type="datetime-local"> in local time. */
+export function toLocalInput(d: Date): string { const p = (x: number) => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }

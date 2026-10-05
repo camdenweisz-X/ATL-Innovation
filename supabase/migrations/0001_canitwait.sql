@@ -1,4 +1,4 @@
--- FixCheck database: run this once in Supabase → SQL Editor (or `supabase db push`).
+-- CanItWait database: run this once in Supabase → SQL Editor (or `supabase db push`).
 -- Everything is protected by Row Level Security: people only see what their memberships allow.
 --
 -- Model
@@ -6,7 +6,7 @@
 --   properties        a building/community a manager runs
 --   property_codes    join codes (resident code + co-manager code); readable by managers only
 --   memberships       who belongs to which property, as 'manager' or 'resident' (+ unit)
---   external_places   a renter's place whose landlord isn't on FixCheck (requests go by email/text)
+--   external_places   a renter's place whose landlord isn't on CanItWait (requests go by email/text)
 --   requests          maintenance requests
 --   request_events    timeline: created, status changes, messages
 
@@ -77,7 +77,7 @@ create index if not exists external_places_user_idx on public.external_places (u
 
 create table if not exists public.requests (
   id                 uuid primary key default gen_random_uuid(),
-  ref                text not null unique default ('FC-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6))),
+  ref                text not null unique default ('CW-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6))),
   resident_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
   property_id        uuid references public.properties (id) on delete cascade,
   external_place_id  uuid references public.external_places (id) on delete set null,
@@ -118,6 +118,22 @@ create table if not exists public.request_events (
 );
 alter table public.request_events add column if not exists notified_at timestamptz;
 create index if not exists request_events_request_idx on public.request_events (request_id, created_at);
+
+-- Work orders (visit scheduling, first-visit fixes, manager urgency changes) and Insights inputs.
+alter table public.requests add column if not exists after_hours boolean not null default false;
+alter table public.requests add column if not exists blanks_left int not null default 0;
+alter table public.requests add column if not exists has_photo boolean not null default false;
+alter table public.requests add column if not exists scheduled_for timestamptz;
+alter table public.requests add column if not exists tech text;
+alter table public.requests add column if not exists first_visit boolean;
+alter table public.requests add column if not exists mgr_urgency public.urgency_level;
+alter table public.requests drop constraint if exists requests_tech_len;
+alter table public.requests add constraint requests_tech_len check (tech is null or char_length(tech) <= 60);
+alter table public.requests drop constraint if exists requests_blanks_range;
+alter table public.requests add constraint requests_blanks_range check (blanks_left between 0 and 50);
+alter table public.request_events add column if not exists detail jsonb;
+alter table public.request_events drop constraint if exists request_events_kind_check;
+alter table public.request_events add constraint request_events_kind_check check (kind in ('created', 'status', 'message', 'urgency'));
 
 -- Server-side rate limiting for the API functions. No policies: only the service role can use it.
 create table if not exists public.api_usage (
@@ -212,10 +228,13 @@ create trigger requests_created_event after insert on public.requests
 create or replace function public.prepare_request() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  new.ref := 'FC-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+  if coalesce(current_setting('canitwait.demo', true), '') = 'on' then return new; end if; -- sample data loader
+  new.ref := 'CW-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
   new.created_at := now();
   new.updated_at := now();
   new.status := 'new';
+  new.has_photo := new.photo_path is not null;
+  new.scheduled_for := null; new.tech := null; new.first_visit := null; new.mgr_urgency := null;
   if new.property_id is not null then
     select unit into new.unit from memberships
       where property_id = new.property_id and user_id = new.resident_id and role = 'resident';
@@ -234,12 +253,15 @@ begin
      or new.external_place_id is distinct from old.external_place_id or new.ref <> old.ref
      or new.created_at <> old.created_at
      or new.ai_urgency is distinct from old.ai_urgency or new.ai_reason is distinct from old.ai_reason
-     or new.manual_review <> old.manual_review then
+     or new.manual_review <> old.manual_review or new.after_hours <> old.after_hours then
     raise exception 'These fields cannot be changed';
   end if;
-  if new.status <> old.status and coalesce(current_setting('fixcheck.status_change', true), '') <> 'on' then
-    raise exception 'Use set_request_status to change status';
+  if (new.status <> old.status or new.scheduled_for is distinct from old.scheduled_for or new.tech is distinct from old.tech
+      or new.first_visit is distinct from old.first_visit or new.mgr_urgency is distinct from old.mgr_urgency)
+     and coalesce(current_setting('canitwait.mgr_change', true), '') <> 'on' then
+    raise exception 'Use set_request_status or set_request_urgency to change status, visit details or urgency';
   end if;
+  new.has_photo := new.photo_path is not null or (old.has_photo and new.photo_path is not distinct from old.photo_path);
   return new;
 end $$;
 drop trigger if exists requests_guard on public.requests;
@@ -292,24 +314,52 @@ begin
   where property_id = p_property;
 end $$;
 
-create or replace function public.set_request_status(p_request uuid, p_status request_status, p_note text default null)
+drop function if exists public.set_request_status(uuid, request_status, text);
+-- Change a request's status. Managers can set any status and, for "scheduled", the visit time and technician;
+-- for "resolved", whether it was fixed on the first visit. Residents can cancel or mark their own request fixed.
+create or replace function public.set_request_status(
+  p_request uuid, p_status request_status, p_note text default null,
+  p_scheduled_for timestamptz default null, p_tech text default null, p_first_visit boolean default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare q requests;
+declare q requests; mgr boolean;
 begin
   select * into q from requests where id = p_request;
   if q.id is null then raise exception 'Request not found'; end if;
-  if q.property_id is not null and public.is_manager(q.property_id) then
-    null; -- managers can set any status
-  elsif q.resident_id = auth.uid() and p_status in ('canceled', 'resolved') then
-    null; -- residents can cancel, or mark resolved on their own request
-  else
+  mgr := q.property_id is not null and public.is_manager(q.property_id);
+  if not mgr and not (q.resident_id = auth.uid() and p_status in ('canceled', 'resolved')) then
     raise exception 'You cannot change this request';
   end if;
-  perform set_config('fixcheck.status_change', 'on', true);
-  update requests set status = p_status where id = p_request;
-  perform set_config('fixcheck.status_change', 'off', true);
-  insert into request_events (request_id, actor_id, kind, status, body)
-  values (p_request, auth.uid(), 'status', p_status, nullif(trim(p_note), ''));
+  perform set_config('canitwait.mgr_change', 'on', true);
+  update requests set
+    status = p_status,
+    scheduled_for = case when mgr and p_status = 'scheduled' then p_scheduled_for else scheduled_for end,
+    tech = case when mgr and p_status = 'scheduled' then nullif(left(trim(p_tech), 60), '') else tech end,
+    first_visit = case when p_status = 'resolved' and mgr then p_first_visit
+                       when p_status in ('new', 'acknowledged') then null else first_visit end
+  where id = p_request;
+  perform set_config('canitwait.mgr_change', 'off', true);
+  insert into request_events (request_id, actor_id, kind, status, body, detail)
+  values (p_request, auth.uid(), 'status', p_status, nullif(trim(p_note), ''),
+          nullif(jsonb_strip_nulls(jsonb_build_object(
+            'scheduled_for', case when mgr and p_status = 'scheduled' then p_scheduled_for end,
+            'tech', case when mgr and p_status = 'scheduled' then nullif(trim(p_tech), '') end,
+            'first_visit', case when mgr and p_status = 'resolved' then p_first_visit end)), '{}'::jsonb));
+end $$;
+
+-- Managers can correct the urgency. Passing null goes back to what the resident sent.
+create or replace function public.set_request_urgency(p_request uuid, p_urgency urgency_level default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare q requests; final urgency_level;
+begin
+  select * into q from requests where id = p_request;
+  if q.id is null or q.property_id is null or not public.is_manager(q.property_id) then raise exception 'Only managers can change urgency'; end if;
+  final := coalesce(p_urgency, q.urgency);
+  if final = coalesce(q.mgr_urgency, q.urgency) then return; end if;
+  perform set_config('canitwait.mgr_change', 'on', true);
+  update requests set mgr_urgency = case when p_urgency = q.urgency then null else p_urgency end where id = p_request;
+  perform set_config('canitwait.mgr_change', 'off', true);
+  insert into request_events (request_id, actor_id, kind, body, detail)
+  values (p_request, auth.uid(), 'urgency', 'Urgency changed to ' || final, jsonb_build_object('urgency', final));
 end $$;
 
 -- Managers can remove a resident or co-manager; anyone can leave. A property keeps at least one manager.
@@ -343,6 +393,73 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 drop function if exists public.delete_my_account();  -- account deletion runs in api/delete-account.js
+
+-- Sample data for demos: a separate property owned by the caller, with 16 realistic requests over the last
+-- six weeks (repeat problems, a possible building-wide AC issue, emergencies, first-visit fixes).
+-- Delete the "Sample data" property to remove all of it.
+create or replace function public.load_demo_data()
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  pid uuid; rid uuid; c timestamptz; r record;
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'Sign in first'; end if;
+  pid := public.create_property('Sample data · Peachtree Commons', '1450 Peachtree St NW, Atlanta', '(404) 555-0100');
+  insert into memberships (property_id, user_id, role, unit) values (pid, me, 'resident', 'Apt 214');
+  perform set_config('canitwait.demo', 'on', true);
+  for r in select * from (values
+    -- days ago, hour, unit, category, title, AI urgency, resident urgency, manager urgency, reason, seen h, scheduled h, visit h, tech, note, fixed h, first visit, blanks, photo, manual
+    (41, 22.0, 'Apt 214', 'Plumbing / Water', 'Ceiling drip over bathroom sink', 'Urgent', null, null, 'Slow drip caught in a bucket; can wait until morning.', 9.0, 10.0, 34.0, 'Marcus', null, 35.0, false, 0, true, false),
+    (19, 10.0, 'Apt 214', 'Plumbing / Water', 'Leak under kitchen sink', 'Urgent', null, null, 'Contained leak under the sink.', 1.5, 2.0, 26.0, 'Marcus', null, 27.0, true, 0, true, false),
+    (2, 23.0, 'Apt 214', 'Plumbing / Water', 'Water stain spreading on bathroom ceiling', 'Urgent', null, null, 'Stain is growing but no active dripping.', 10.0, 10.5, 34.0, 'Marcus', 'We''ll check the unit above yours too.', null, null, 1, true, false),
+    (4, 21.0, 'Apt 305', 'Heating / AC', 'AC blowing warm air', 'Urgent', null, null, 'No AC in hot weather can wait until morning.', 11.0, null, null, null, null, null, null, 0, true, false),
+    (3, 14.0, 'Apt 307', 'Heating / AC', 'AC not cooling, 84° inside', 'Urgent', null, null, 'No AC in hot weather.', 2.0, null, null, null, null, null, null, 0, true, false),
+    (1, 22.0, 'Apt 112', 'Heating / AC', 'No cold air from vents', 'Urgent', null, null, 'No AC in hot weather.', null, null, null, null, null, null, null, 0, true, false),
+    (12, 23.2, 'Apt 410', 'Gas', 'Gas smell near the stove', 'Emergency', null, null, 'A gas smell is always an emergency.', 0.12, null, null, null, null, 2.5, true, 0, false, false),
+    (25, 1.7, 'Apt 220', 'Doors / Locks / Windows', 'Front door won''t lock', 'Emergency', null, null, 'An entry door that won''t lock is a security emergency.', 0.25, null, null, null, null, 3.0, true, 0, true, false),
+    (9, 11.0, 'Apt 118', 'Electrical', 'Bedroom outlet stopped working', 'Routine', null, null, 'One dead outlet, no sparks or burning smell.', 3.0, 4.0, 50.0, 'Andre', null, 51.0, true, 0, true, false),
+    (6, 20.0, 'Apt 302', 'Appliance', 'Fridge not keeping food cold', 'Urgent', null, null, 'Broken fridge can wait until morning.', 12.0, 12.5, 15.0, 'Andre', null, 16.0, false, 0, true, false),
+    (15, 13.0, 'Apt 205', 'Other', 'Closet door off its track', 'Routine', null, null, 'Cosmetic, no safety issue.', 20.0, null, null, null, null, 70.0, true, 0, true, false),
+    (30, 9.0, 'Apt 108', 'Pests', 'Ants in the kitchen', 'Routine', null, null, 'Small pest sighting.', 4.0, 5.0, 48.0, 'Pest vendor', null, 49.0, true, 0, true, false),
+    (4, 19.0, 'Apt 216', 'Electrical', 'Bathroom fan very loud', 'Urgent', null, 'Routine', 'Unusual noise from an electrical fan.', 14.0, null, null, null, null, null, null, 0, true, false),
+    (20, 23.0, 'Apt 401', 'Plumbing / Water', 'Toilet keeps running', 'Routine', null, null, 'Running toilet, still usable.', 10.0, null, null, null, null, 30.0, true, 2, false, false),
+    (8, 0.5, 'Apt 118', 'Ceiling / Walls / Floors', 'Crack above bedroom window', null, 'Urgent', null, null, 9.0, null, null, null, null, null, null, 0, true, true),
+    (33, 22.0, 'Apt 302', 'Plumbing / Water', 'Kitchen sink draining slowly', 'Routine', 'Urgent', null, 'Slow drain.', 11.0, null, null, null, null, 40.0, true, 0, true, false)
+  ) as t(d, h, unit, cat, title, ai, res_u, mgr_u, why, seen, sched, visit, tech, note, fixed, first, blanks, photo, manual)
+  loop
+    c := date_trunc('day', now()) - make_interval(days => r.d) + make_interval(secs => r.h * 3600);
+    if c > now() then c := now() - interval '40 minutes'; end if;
+    insert into requests (resident_id, property_id, unit, title, category, urgency, ai_urgency, ai_reason, body, manual_review,
+                          after_hours, blanks_left, has_photo, ref, created_at, updated_at, status, mgr_urgency,
+                          scheduled_for, tech, first_visit)
+    values (me, pid, r.unit, r.title, r.cat, coalesce(r.res_u, r.ai)::urgency_level, r.ai::urgency_level, r.why,
+            r.title || '. It''s in my apartment and I''d like it looked at.', r.manual,
+            extract(hour from c) < 8 or extract(hour from c) >= 18 or extract(isodow from c) >= 6, r.blanks, r.photo,
+            'CW-S' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 5)), c, c,
+            (case when r.fixed is not null then 'resolved' when r.sched is not null then 'scheduled' when r.seen is not null then 'acknowledged' else 'new' end)::request_status,
+            r.mgr_u::urgency_level,
+            case when r.visit is not null then c + make_interval(secs => r.visit * 3600) end, r.tech, r.first)
+    returning id into rid;
+    update request_events set created_at = c where request_id = rid and kind = 'created';
+    if r.seen is not null then
+      insert into request_events (request_id, actor_id, kind, status, created_at, notified_at) values (rid, me, 'status', 'acknowledged', c + make_interval(secs => r.seen * 3600), now());
+    end if;
+    if r.mgr_u is not null then
+      insert into request_events (request_id, actor_id, kind, body, detail, created_at, notified_at)
+      values (rid, me, 'urgency', 'Urgency changed to ' || r.mgr_u, jsonb_build_object('urgency', r.mgr_u), c + make_interval(secs => (coalesce(r.seen, 0) + 0.1) * 3600), now());
+    end if;
+    if r.sched is not null then
+      insert into request_events (request_id, actor_id, kind, status, body, detail, created_at, notified_at)
+      values (rid, me, 'status', 'scheduled', r.note, jsonb_build_object('scheduled_for', c + make_interval(secs => r.visit * 3600), 'tech', r.tech), c + make_interval(secs => r.sched * 3600), now());
+    end if;
+    if r.fixed is not null then
+      insert into request_events (request_id, actor_id, kind, status, detail, created_at, notified_at)
+      values (rid, me, 'status', 'resolved', jsonb_build_object('first_visit', r.first), c + make_interval(secs => r.fixed * 3600), now());
+    end if;
+  end loop;
+  perform set_config('canitwait.demo', 'off', true);
+  return pid;
+end $$;
 
 -- ---------------------------------------------------------------- row level security
 alter table public.profiles        enable row level security;
@@ -401,7 +518,7 @@ drop policy if exists events_select on public.request_events;
 create policy events_select on public.request_events for select to authenticated using (public.can_see_request(request_id));
 drop policy if exists events_insert on public.request_events;
 create policy events_insert on public.request_events for insert to authenticated with check (
-  kind = 'message' and actor_id = auth.uid() and status is null and notified_at is null
+  kind = 'message' and actor_id = auth.uid() and status is null and notified_at is null and detail is null
   and char_length(coalesce(body, '')) between 1 and 2000
   and exists (
     select 1 from public.requests q where q.id = request_id and q.property_id is not null
@@ -416,13 +533,17 @@ create policy events_insert on public.request_events for insert to authenticated
 revoke execute on function public.create_property(text, text, text) from public, anon;
 revoke execute on function public.join_property(text, text) from public, anon;
 revoke execute on function public.rotate_codes(uuid) from public, anon;
-revoke execute on function public.set_request_status(uuid, request_status, text) from public, anon;
+revoke execute on function public.set_request_status(uuid, request_status, text, timestamptz, text, boolean) from public, anon;
+revoke execute on function public.set_request_urgency(uuid, urgency_level) from public, anon;
+revoke execute on function public.load_demo_data() from public, anon;
 revoke execute on function public.remove_membership(uuid) from public, anon;
 revoke execute on function public.property_people(uuid) from public, anon;
 grant execute on function public.create_property(text, text, text) to authenticated;
 grant execute on function public.join_property(text, text) to authenticated;
 grant execute on function public.rotate_codes(uuid) to authenticated;
-grant execute on function public.set_request_status(uuid, request_status, text) to authenticated;
+grant execute on function public.set_request_status(uuid, request_status, text, timestamptz, text, boolean) to authenticated;
+grant execute on function public.set_request_urgency(uuid, urgency_level) to authenticated;
+grant execute on function public.load_demo_data() to authenticated;
 grant execute on function public.remove_membership(uuid) to authenticated;
 grant execute on function public.property_people(uuid) to authenticated;
 

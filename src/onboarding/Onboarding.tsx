@@ -10,7 +10,7 @@ import { JoinForm, ExternalPlaceForm, CreatePropertyForm } from "../shared-scree
 
 type Step = "name" | "role" | "resident" | "external" | "manager" | "team";
 
-/** First-run setup: name → how you'll use FixCheck → connect a place or create a property. */
+/** First-run setup: name → how you'll use CanItWait → connect a place or create a property. */
 export function Onboarding() {
   const { profile, user, refresh, setWorkspace, signOut } = useSession();
   const nav = useNavigate();
@@ -43,7 +43,7 @@ export function Onboarding() {
 
         {step === "name" && (
           <div className="auth-card stack-lg">
-            <div><h1 className="h1" style={{ fontSize: 26 }}>Welcome to FixCheck</h1><p className="lede">Your name goes on requests so maintenance knows who to contact.</p></div>
+            <div><h1 className="h1" style={{ fontSize: 26 }}>Welcome to CanItWait</h1><p className="lede">Your name goes on requests so maintenance knows who to contact.</p></div>
             <form className="stack" noValidate onSubmit={async (e) => {
               e.preventDefault(); setErr(null);
               if (!name.trim()) return setErr("Add your name.");
@@ -64,7 +64,7 @@ export function Onboarding() {
 
         {step === "role" && (
           <div className="stack-lg">
-            <div><h1 className="h1" style={{ fontSize: 26 }}>How will you use FixCheck?</h1><p className="lede">You can add the other later in Settings.</p></div>
+            <div><h1 className="h1" style={{ fontSize: 26 }}>How will you use CanItWait?</h1><p className="lede">You can add the other later in Settings.</p></div>
             <div className="stack">
               <button className="role-card" onClick={() => setStep("resident")}>
                 <span className="ico"><Icon name="home" /></span>
@@ -83,14 +83,14 @@ export function Onboarding() {
             <div><h1 className="h1" style={{ fontSize: 26 }}>Connect your home</h1><p className="lede">Enter the code from your property manager so your requests go straight to them.</p></div>
             <JoinForm onDone={(r) => finish(r.role === "manager" ? "manager" : "resident")} submitLabel="Connect" />
             <div className="divider">or</div>
-            <Button variant="secondary" block onClick={() => setStep("external")}>My landlord doesn't use FixCheck</Button>
+            <Button variant="secondary" block onClick={() => setStep("external")}>My landlord doesn't use CanItWait</Button>
             <button className="btn ghost sm" onClick={() => { local.del("fc_join"); setStep("role"); }}><Icon name="chevronLeft" />Back</button>
           </div>
         )}
 
         {step === "external" && (
           <div className="auth-card stack-lg">
-            <div><h1 className="h1" style={{ fontSize: 26 }}>Add your home</h1><p className="lede">FixCheck drafts each request, then opens your email or texting app so you can send it to your landlord.</p></div>
+            <div><h1 className="h1" style={{ fontSize: 26 }}>Add your home</h1><p className="lede">CanItWait drafts each request, then opens your email or texting app so you can send it to your landlord.</p></div>
             <ExternalPlaceForm onDone={() => finish("resident")} />
             <button className="btn ghost sm" onClick={() => setStep("resident")}><Icon name="chevronLeft" />Back</button>
           </div>

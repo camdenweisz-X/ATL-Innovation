@@ -41,7 +41,7 @@ export function JoinForm({ onDone, submitLabel = "Join property", initialCode }:
   );
 }
 
-/** A place whose landlord isn't on FixCheck: requests go out by the renter's own email or text app. */
+/** A place whose landlord isn't on CanItWait: requests go out by the renter's own email or text app. */
 export function ExternalPlaceForm({ initial, onDone, onDelete }: { initial?: ExternalPlace; onDone: () => void; onDelete?: () => void }) {
   const [f, setF] = useState({
     label: initial?.label ?? "", unit: initial?.unit ?? "", contact_name: initial?.contact_name ?? "",
@@ -54,7 +54,7 @@ export function ExternalPlaceForm({ initial, onDone, onDelete }: { initial?: Ext
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr(null);
     if (!f.label.trim()) return setErr("Give this place a name, like “My apartment”.");
-    if (!f.contact_email.trim() && !f.contact_phone.trim()) return setErr("Add your landlord's email or phone so FixCheck knows where to send requests.");
+    if (!f.contact_email.trim() && !f.contact_phone.trim()) return setErr("Add your landlord's email or phone so CanItWait knows where to send requests.");
     if (f.contact_email && !/^\S+@\S+\.\S+$/.test(f.contact_email.trim())) return setErr("That email doesn't look right.");
     setBusy(true);
     const row = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.trim() || null]));

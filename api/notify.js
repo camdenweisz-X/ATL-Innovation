@@ -17,12 +17,12 @@ function layout({ heading, lines, link, linkText }) {
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #dde2e8;border-radius:12px">
   <tr><td style="padding:24px">
-    <div style="font-weight:700;font-size:15px;color:#1f5a96;margin-bottom:16px">FixCheck</div>
+    <div style="font-weight:700;font-size:15px;color:#1f5a96;margin-bottom:16px">CanItWait</div>
     <div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(heading)}</div>
     ${lines.map((l) => `<p style="margin:0 0 10px;font-size:15px;line-height:1.5">${l}</p>`).join("")}
     <a href="${esc(link)}" style="display:inline-block;margin-top:12px;background:#1f5a96;color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px">${esc(linkText)}</a>
   </td></tr></table>
-  <div style="font-size:12px;color:#6b7684;margin-top:12px">You get these because email updates are on in FixCheck settings.</div>
+  <div style="font-size:12px;color:#6b7684;margin-top:12px">You get these because email updates are on in CanItWait settings.</div>
   </td></tr></table></body></html>`;
 }
 
@@ -30,7 +30,7 @@ async function sendEmail(to, subject, html) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.RESEND_FROM || "FixCheck <onboarding@resend.dev>", to: [to], subject, html }),
+    body: JSON.stringify({ from: process.env.RESEND_FROM || "CanItWait <onboarding@resend.dev>", to: [to], subject, html }),
   });
   if (!r.ok) console.error("Resend error", r.status, (await r.text().catch(() => "")).slice(0, 300));
   return r.ok;
@@ -99,13 +99,17 @@ export default async function handler(req, res) {
         ? (ev.status === "canceled" ? `${nameOf(ev.actor_id)} canceled their request` : `${nameOf(ev.actor_id)} marked their request ${label.toLowerCase()}`)
         : `Your request is now: ${label}`;
       lines = [`${esc(q.title)} · ${where}`];
+      if (ev.status === "scheduled" && ev.detail?.scheduled_for) {
+        const t = new Date(ev.detail.scheduled_for).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+        lines.push(`<b>Visit: ${esc(t)}</b>${ev.detail.tech ? ` · ${esc(ev.detail.tech)}` : ""}`);
+      }
       if (ev.body) lines.push(`Note from ${esc(nameOf(ev.actor_id))}: ${esc(ev.body)}`);
     } else {
       subject = `New message: ${q.title}`;
       heading = `${nameOf(ev.actor_id)} sent a message`;
       lines = [`${esc(q.title)} · ${where}`, `“${esc(ev.body)}”`];
     }
-    if (await sendEmail(to, subject, layout({ heading, lines, link, linkText: "Open in FixCheck" }))) sent++;
+    if (await sendEmail(to, subject, layout({ heading, lines, link, linkText: "Open in CanItWait" }))) sent++;
   }
   // If every email failed (e.g., Resend was down), release the claim so a later call can retry.
   if (sent === 0) await admin.from("request_events").update({ notified_at: null }).eq("id", eventId);
