@@ -18,7 +18,12 @@ async function postApi(path: string, body: unknown, signal?: AbortSignal): Promi
   const r = await go();
   if (r.status !== 401) return r;
   const { error } = await supabase.auth.refreshSession();
-  if (error) return r;
+  if (error) {
+    // The session was ended elsewhere (for example, signed out on another device), so the saved token can
+    // never work again. Clear it on this device only, which sends the person back to the sign-in screen.
+    await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+    return r;
+  }
   return go();
 }
 
