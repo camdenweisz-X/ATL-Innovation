@@ -71,11 +71,16 @@ export function Sheet({ open, onClose, title, children, labelledBy }: { open: bo
   const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);
   const tid = useId();
+  // Callers pass a new onClose on every render. Keep the latest in a ref so the effect below runs only when
+  // the sheet opens or closes, not on every keystroke (re-running it moved focus out and back, which closed
+  // and reopened the phone keyboard after each letter).
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
     const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") return onClose();
+      if (e.key === "Escape") return closeRef.current();
       if (e.key !== "Tab" || !ref.current) return;
       // Keep keyboard focus inside the dialog.
       const f = Array.from(ref.current.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])'));
@@ -86,9 +91,9 @@ export function Sheet({ open, onClose, title, children, labelledBy }: { open: bo
     };
     document.addEventListener("keydown", k);
     document.body.style.overflow = "hidden";
-    setTimeout(() => ref.current?.querySelector<HTMLElement>("input,textarea,select,button:not([data-close])")?.focus(), 30);
-    return () => { document.removeEventListener("keydown", k); document.body.style.overflow = ""; prev?.focus?.(); };
-  }, [open, onClose]);
+    const timer = setTimeout(() => ref.current?.querySelector<HTMLElement>("input,textarea,select,button:not([data-close])")?.focus(), 30);
+    return () => { clearTimeout(timer); document.removeEventListener("keydown", k); document.body.style.overflow = ""; prev?.focus?.(); };
+  }, [open]);
   if (!open) return null;
   return (
     <div className="scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
