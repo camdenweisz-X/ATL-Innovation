@@ -1,15 +1,9 @@
-/* Styles for the static Privacy and Terms pages. Colors match the app (src/styles.css). */
+/* Styles for the static Privacy and Terms pages. Colors match the app (src/styles.css).
+   Light by default; dark only when the person turned dark mode on in Settings (theme-init.js). */
 :root {
   --bg: #f4f5f7; --surface: #ffffff; --ink: #18212b; --ink-2: #3a4552; --muted: #5d6874;
   --line: #dde2e7; --accent: #1f5a96; --emer: #b42318; --emer-bg: #fdeceb; --emer-line: #f3b8b2;
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0e1318; --surface: #161d24; --ink: #e7ecf1; --ink-2: #c3ccd5; --muted: #95a1ad;
-    --line: #28323d; --accent: #6aa6df; --emer: #ff8b80; --emer-bg: #351816; --emer-line: #6b2a24;
-    color-scheme: dark;
-  }
 }
 :root[data-theme="dark"] {
   --bg: #0e1318; --surface: #161d24; --ink: #e7ecf1; --ink-2: #c3ccd5; --muted: #95a1ad;

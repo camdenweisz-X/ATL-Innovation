@@ -29,7 +29,8 @@ You'll collect these values along the way:
 2. **Email confirmation (important):** Supabase's built-in email sender only sends 2 emails an hour, and only to members of your Supabase team. For internal testing, pick one:
    - **Easiest:** turn off **Confirm email** under the Email provider settings. People can sign up and use the app right away.
    - **Proper:** set up Resend (step 5) and enter it under **Authentication → Emails → SMTP settings**. Then leave Confirm email on.
-3. **Google sign-in (optional):**
+3. **Changing email:** people can change their email in Settings. With **Confirm email** off, the change happens right away. With it on, Supabase emails a confirmation link (to both the old and new address when **Secure email change** is on), so set up Resend SMTP first or the links won't arrive.
+4. **Google sign-in (optional):**
    1. In Google Cloud Console, go to **APIs & Services → Credentials → Create credentials → OAuth client ID → Web application**.
    2. Under **Authorized JavaScript origins** add your Vercel address and `http://localhost:5173`.
    3. Under **Authorized redirect URIs** add the callback URL shown on Supabase's Google provider page. It looks like `https://YOUR-PROJECT.supabase.co/auth/v1/callback`.

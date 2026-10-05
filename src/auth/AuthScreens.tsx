@@ -203,22 +203,28 @@ export function Forgot() {
 export function ResetPassword() {
   const { session } = useSession();
   const nav = useNavigate();
-  const [pw, setPw] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null);
-  const pId = useId();
+  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const pId = useId(), p2Id = useId();
+  if (done) return (
+    <AuthFrame title="Password updated" lede="Your new password is saved. Use it next time you sign in."><Button block onClick={() => nav("/", { replace: true })}>Continue</Button></AuthFrame>
+  );
   if (!session) return (
     <AuthFrame title="Link expired" lede="This reset link is no longer valid. Request a new one." foot={<Link to="/forgot">Send a new link</Link>}><span /></AuthFrame>
   );
   return (
-    <AuthFrame title="Set a new password">
+    <AuthFrame title="Set a new password" lede={session.user.email ? `For ${session.user.email}` : undefined}>
       <form className="stack" noValidate onSubmit={async (e) => {
         e.preventDefault(); setErr(null);
         if (pw.length < 8) return setErr("Use a password with at least 8 characters.");
+        if (pw !== pw2) return setErr("The passwords don't match.");
         setBusy(true);
         const { error } = await supabase.auth.updateUser({ password: pw });
         setBusy(false);
-        if (error) setErr(friendly(error)); else nav("/", { replace: true });
+        if (error) setErr(/should be different/i.test(error.message) ? "Choose a password different from your old one." : friendly(error)); else setDone(true);
       }}>
         <Field label="New password" hint="At least 8 characters." htmlFor={pId}><input id={pId} className="input" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} /></Field>
+        <Field label="Confirm new password" htmlFor={p2Id}><input id={p2Id} className="input" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} /></Field>
         {err && <p className="err" role="alert">{err}</p>}
         <Button type="submit" block loading={busy}>Save password</Button>
       </form>
