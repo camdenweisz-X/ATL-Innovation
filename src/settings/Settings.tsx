@@ -5,6 +5,7 @@ import { useSession } from "../lib/session";
 import { getTheme, setTheme } from "../lib/theme";
 import { useT } from "../lib/i18n";
 import { pushState, enablePush, disablePush, type PushState } from "../lib/push";
+import { fetchAdmin } from "../lib/api";
 import type { User } from "@supabase/supabase-js";
 import type { ExternalPlace, Membership } from "../lib/types";
 import { Button, Field, Sheet, Switch, useToast, Empty, LangSwitch } from "../ui/kit";
@@ -38,6 +39,9 @@ export function Settings() {
   const methods = signInMethods(user);
   const pendingEmail = user?.new_email && user.new_email !== user.email ? user.new_email : null;
   const close = () => setSheet(null);
+  // Owner-only: the server says whether this account may open the admin dashboard.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { let alive = true; fetchAdmin(true).then((r) => { if (alive) setIsAdmin(!!r); }).catch(() => undefined); return () => { alive = false; }; }, [user?.id]);
 
   // Keep the form in step with the saved profile (for example after it loads).
   useEffect(() => { setName(profile?.full_name || ""); setPhone(profile?.phone || ""); }, [profile?.full_name, profile?.phone]);
@@ -179,6 +183,7 @@ export function Settings() {
             <p style={{ margin: 0 }}>{t("Your requests, photos and videos are visible only to you and the managers of the property you sent them to.")}</p>
           </div>
           <div className="list">
+            {isAdmin && <Link to="/admin" className="list-row"><Icon name="users" width={20} height={20} /><div className="grow"><div style={{ fontWeight: 600 }}>Admin dashboard</div><div className="small muted">Sign-ups and activity. Only you can see this.</div></div><Icon name="chevronRight" /></Link>}
             <a href="/privacy" className="list-row"><Icon name="lock" width={20} height={20} /><div className="grow" style={{ fontWeight: 600 }}>{t("Privacy Policy")}</div><Icon name="chevronRight" /></a>
             <a href="/terms" className="list-row"><Icon name="info" width={20} height={20} /><div className="grow" style={{ fontWeight: 600 }}>{t("Terms of Service")}</div><Icon name="chevronRight" /></a>
             <a href="mailto:camdenweisz@gmail.com?subject=CanItWait%20help" className="list-row"><Icon name="message" width={20} height={20} /><div className="grow"><div style={{ fontWeight: 600 }}>{t("Contact support")}</div><div className="small muted">camdenweisz@gmail.com</div></div><Icon name="chevronRight" /></a>
