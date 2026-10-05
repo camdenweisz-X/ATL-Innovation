@@ -179,6 +179,10 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 .codecard{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:14px 16px;margin:6px 0 16px}
 .codecard .eyebrow{font:600 11.5px/1.3 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .codecard .code{font:600 24px/1.2 var(--mono);letter-spacing:.06em;margin:4px 0;user-select:all}
+.rolecard{appearance:none;text-align:left;display:flex;flex-direction:column;gap:4px;width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;color:var(--ink);box-shadow:var(--shadow);font-family:var(--body)}
+.rolecard:hover{border-color:var(--accent)}
+.rolecard .rc-t{font:700 19px/1.2 var(--display)}
+.rolecard .rc-d{font-size:14px;color:var(--muted)}
 .empty{border:1.5px dashed var(--line);border-radius:14px;padding:28px 20px;text-align:center;color:var(--muted)}
 .banner{background:var(--flag-bg);color:var(--ink);border:1px solid var(--flag);border-radius:12px;padding:12px 14px;font-size:14px}
 footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -191,7 +195,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
     <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9h11v-9"/><path d="m9.5 14.5 2 2 3.5-4"/></svg></span><span>Fix<span class="b2">Check</span></span></div>
     <div class="who" id="who" hidden></div>
   </div>
-  <nav class="tabs" role="tablist">
+  <nav class="tabs" role="tablist" id="tabs" hidden>
     <button role="tab" id="tab-report" aria-selected="true">Report a problem</button>
     <button role="tab" id="tab-inbox" aria-selected="false">Manager inbox <span class="count" id="inboxCount" hidden>0</span></button>
   </nav>
@@ -201,6 +205,23 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
   <ol class="stepper" id="stepper" hidden aria-label="Progress">
     <li data-s="1">Describe</li><li data-s="2">Review</li><li data-s="3">Send</li>
   </ol>
+
+  <!-- ========== WELCOME / SIGN-UP ========== -->
+  <section id="v-welcome" hidden>
+    <h1 style="margin-top:28px">Report what broke. Know how urgent it is.</h1>
+    <p class="lede">Snap a photo, get an urgency call in seconds, and send maintenance a complete request.</p>
+    <div class="stack">
+      <button class="rolecard" type="button" data-role="resident"><span class="rc-t">I rent an apartment</span><span class="rc-d">Report problems and track what you've sent.</span></button>
+      <button class="rolecard" type="button" data-role="manager"><span class="rc-t">I manage a property</span><span class="rc-d">Get a resident code and an inbox sorted by urgency.</span></button>
+    </div>
+  </section>
+
+  <!-- ========== RESIDENT: MY REQUESTS ========== -->
+  <section id="v-outbox" hidden>
+    <h1>My requests</h1>
+    <p class="lede">Everything you've sent from this phone, newest first.</p>
+    <div class="stack" id="outboxList"></div>
+  </section>
 
   <!-- ========== RESIDENT: PROFILE (first run) ========== -->
   <section id="v-profile" hidden>
@@ -364,7 +385,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
     </div>
   </section>
 
-  <footer><span id="modeTag"></span><span id="verTag"></span><button class="btn quiet" id="editProfileBtn" type="button" style="padding:4px 10px;font-size:12px">Edit unit</button></footer>
+  <footer><span id="modeTag"></span><span id="verTag"></span><span class="btnrow" style="gap:6px"><button class="btn quiet" id="editProfileBtn" type="button" style="padding:4px 10px;font-size:12px">Edit unit</button><button class="btn quiet" id="switchRoleBtn" type="button" style="padding:4px 10px;font-size:12px">Switch role</button></span></footer>
 </main>
 
 <script>
@@ -375,7 +396,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
    1) claude.ai artifact: AI via claude.use("sample"), inbox via claude.use("db")
    2) Static hosting (Vercel): AI via POST /api/triage, inbox in this browser (localStorage)
    ============================================================ */
-const APP_VERSION = "v1.3";
+const APP_VERSION = "v1.4";
 /* SHARED-START (build.sh copies this block into lib/triage.js for the hosted API) */
 const LEVELS = ["Routine","Urgent","Emergency"];
 const RANK = {Routine:1, Urgent:2, Emergency:3};
@@ -398,8 +419,12 @@ const store = {
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch{ return false; } }
 };
 function show(view){
-  for (const v of ["profile","compose","thinking","result","sent","inbox"]) $("v-"+v).hidden = v !== view;
-  const inInbox = view === "inbox";
+  for (const v of ["welcome","profile","compose","thinking","result","sent","inbox","outbox"]) $("v-"+v).hidden = v !== view;
+  const inInbox = view === "inbox" || view === "outbox";
+  $("tabs").hidden = !role || view === "welcome";
+  $("tab-report").hidden = role === "manager";
+  $("tab-inbox").firstChild.textContent = role === "manager" ? "Inbox " : "My requests ";
+  $("editProfileBtn").hidden = role !== "resident";
   $("tab-report").setAttribute("aria-selected", String(!inInbox));
   $("tab-inbox").setAttribute("aria-selected", String(inInbox));
   const step = {compose:1, thinking:1, result:2, sent:3}[view];
@@ -832,6 +857,7 @@ function renderSent(item, where){
     "This device can't reach the manager inbox. Copy the request below and send it by text or email.";
   $("sentText").textContent = item.full;
   $("contactLine").textContent = [profile.email && `Manager email: ${profile.email}`, profile.mphone && `Manager phone: ${profile.mphone}`].filter(Boolean).join(" · ");
+  const ob = store.get("fc_outbox", []); ob.unshift({...item, via: where, photo: item.photo}); while (ob.length > 25) ob.pop(); store.set("fc_outbox", ob);
   show("sent"); clearSaved();
 }
 function setupDirectSend(item){
@@ -895,6 +921,7 @@ $("mgrForm").addEventListener("submit", e=>{
   renderInbox();
 });
 function renderInbox(){
+  if (role !== "manager" && !RT.inArtifact){ $("inboxCount").hidden = true; return; }
   const prop = store.get("fc_property", null);
   $("mgrSetup").hidden = !!prop || RT.inArtifact; $("mgrMain").hidden = !prop && !RT.inArtifact;
   if (!prop && !RT.inArtifact) return;
@@ -957,9 +984,28 @@ $("inboxList").addEventListener("click", async e=>{
 let lastResidentView = "compose";
 $("tab-report").onclick = ()=> show(profile ? (["result","sent","thinking"].includes(lastResidentView) ? lastResidentView : "compose") : "profile");
 $("tab-inbox").onclick = ()=>{
+  if (role === "manager"){ renderInbox(); show("inbox"); return; }
   const vis = ["profile","compose","thinking","result","sent"].find(v=>!$("v-"+v).hidden); if (vis) lastResidentView = vis;
-  renderInbox(); show("inbox");
+  renderOutbox(); show("outbox");
 };
+const VIA = { direct:"Sent with your email or text app", device:"Sent to your property's FixCheck inbox", inbox:"Sent to your property's FixCheck inbox", copy:"Copied to send yourself" };
+function renderOutbox(){
+  const ob = store.get("fc_outbox", []);
+  if (!ob.length){ $("outboxList").innerHTML = `<div class="empty">No requests yet. When you send one, it shows up here with its urgency and how it was sent.</div>`; return; }
+  $("outboxList").innerHTML = ob.map(i=>`<article class="inbox-item ${esc(i.urgency)}">
+    <div class="inbox-head">${i.photo ? `<img src="${esc(i.photo)}" alt="Your photo">` : ""}<div class="t">
+      <div class="pills"><span class="pill ${esc(i.urgency)}">${esc(i.urgency)}</span><span class="pill cat">${esc(i.category)}</span></div>
+      <h3>${esc(i.title)}</h3><div class="mono">${esc(i.id)} · ${esc(i.localTime)}</div></div></div>
+    <div class="note">${esc(VIA[i.via] || "Sent")}</div>
+    <details><summary>Full request</summary><div class="reqtext">${esc(i.full || i.request)}</div></details>
+  </article>`).join("");
+}
+let role = store.get("fc_role", null);
+document.querySelectorAll(".rolecard").forEach(b=> b.onclick = ()=>{
+  role = b.dataset.role; store.set("fc_role", role);
+  if (role === "manager"){ renderInbox(); show("inbox"); } else { restore(); }
+});
+$("switchRoleBtn").onclick = ()=>{ role = null; try{ localStorage.removeItem("fc_role"); }catch{} show("welcome"); };
 $("verTag").textContent = "FixCheck " + APP_VERSION;
 renderChecks(); renderWho();
 /* Restore a report in progress (the phone may have reloaded the page while you were in another app). */
@@ -989,7 +1035,9 @@ async function restore(){
     $("resumeNote").hidden = false;
   }
 }
-restore();
+if (!role) show("welcome");
+else if (role === "manager"){ renderInbox(); show("inbox"); }
+else restore();
 initRuntime();
 </script>
 
