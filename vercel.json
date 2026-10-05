@@ -1,0 +1,4 @@
+{
+  "outputDirectory": "public",
+  "functions": { "api/triage.js": { "maxDuration": 60 } }
+}
