@@ -1,57 +1,69 @@
-# FixCheck — The InnovAItors (ATL Cup 2026, Mission 5)
+# FixCheck
 
-For **apartment residents in metro Atlanta**, when **something in their unit breaks, often after hours**, FixCheck lets them **snap a photo, add a few words, and get an AI urgency call plus a drafted maintenance request** so they can **send a complete request at the right urgency and know whether to call now or go to bed**.
+Team: The InnovAItors (ATL Cup 2026, Mission 5)
 
-## Deploy to Vercel (free, ~10 minutes)
+FixCheck is for apartment renters in metro Atlanta. When something breaks, you take a photo and type a few words. The app tells you if it's an Emergency, Urgent, or Routine, writes up the maintenance request, and helps you send it.
 
-1. Push this folder's contents to the **root** of the GitHub repo (`vercel.json`, `public/`, `api/` must sit at the top level).
-2. vercel.com → sign in with GitHub → **Add New → Project** → import the repo.
-   - Framework Preset: **Other**. Leave Build and Output settings as they are (`vercel.json` sets them).
-3. Before clicking Deploy, open **Environment Variables** and add:
-   - `GEMINI_API_KEY` = your key from aistudio.google.com/apikey
-4. **Deploy.** Open the `*.vercel.app` link on a phone and run one report end to end.
-5. If the AI check fails: Vercel project → **Logs** (or Deployments → the deployment → Functions). Lines starting `Gemini ... error` show Google's reason. Common ones: 400/403 = key wrong or not set (redeploy after adding the variable), 429 = free-tier limit hit, wait a minute.
+## How it works
 
-Changing the key later: update the variable in Vercel → Settings → Environment Variables, then **Redeploy**.
+**Renters**
+1. Open the app and pick "I rent an apartment."
+2. Enter your first name and unit. Choose how requests get sent: by your own email/text, or to your property's FixCheck inbox (needs a code from your manager).
+3. Add a photo, describe the problem, and answer the quick safety questions.
+4. Tap **Check urgency**. The AI looks at the photo and description and gives you:
+   - the urgency level and why
+   - what to do until it's fixed
+   - a drafted request you can edit
+   - questions maintenance will probably ask
+5. Change anything you want, then send it. Past requests show up under **My requests**.
 
-### Where the API key lives
+**Managers**
+1. Pick "I manage a property."
+2. Enter the property name. You get a code like `FC-PEAC-7K3Q` to give to residents.
+3. Requests from residents who used your code show up in your inbox, emergencies first.
 
-Only in Vercel's server environment. `api/triage.js` reads `process.env.GEMINI_API_KEY` and sends it to Google in a request header. The browser only ever talks to `/api/triage` and never sees the key. The key is not in this repo; `.env` is git-ignored.
+**Safety rules that don't depend on the AI**
+- Answering "Yes" to any safety question (gas smell, smoke, water you can't stop, CO alarm, door won't lock) always makes it an Emergency.
+- If the AI is down or gives a bad answer, you can still fill out a basic form and send it. It gets marked for manual review.
 
-## The one core task
+## Setup (Vercel, free)
 
-1. **Entry** – Resident opens the app. First run only: first name, unit, community, optional after-hours line and manager email (saved on the phone).
-2. **Action** – Photo + a few words + optional 5-question safety check → **Check urgency**.
-3. **AI function** – one call to Gemini (Flash). Input: photo, description, safety-check answers, current local time. Output (JSON): urgency (Emergency / Urgent / Routine), one-sentence reason, safety message, 1–2 "until it's fixed" steps, category, title, drafted request with `[bracketed blanks]` for missing facts, up to 4 technician questions, photo notes.
-4. **Resident control** – change urgency (manager sees "Resident changed from X"), category, title, edit the message, answer the questions. Nothing sends until the resident taps **Send**.
-5. **Result** – request lands in the **Manager inbox** sorted Emergency → Urgent → Routine, with photo, unit, category, AI reason. Resident sees "Call now" / "You can go to bed" / "All set" plus a copyable request.
+1. Put this code in a GitHub repo. `vercel.json`, `public/`, and `api/` need to be at the top level.
+2. Go to vercel.com, log in with GitHub, click **Add New → Project**, and import the repo. Framework: **Other**.
+3. Under **Environment Variables**, add `GEMINI_API_KEY` with your key from aistudio.google.com/apikey.
+4. Click **Deploy**. Open the link it gives you on your phone.
 
-**Failure / help paths:** no photo or text → prompt; any "Yes" on the safety check → forced Emergency (rule, not AI, enforced in page and server); Emergency → red safety panel with 911 / Atlanta Gas Light / after-hours line; AI unreachable, stopped, busy or malformed reply → basic form, request flagged **Manual review**; first model busy → server retries a second free model; leftover `[blanks]` → warning before send; inbox unreachable → copy the request and text/email it.
+Every time you commit to GitHub, Vercel redeploys on its own. The version number is in the app's footer.
 
-## Code map
+If the AI check fails, open your project in Vercel and check **Logs**. Lines starting with `Gemini ... error` tell you why. Usually it's a missing key (add it and redeploy) or the free limit (wait a minute).
+
+## Where the API key goes
+
+Only in Vercel's environment variables. The browser never sees it, and it should never be put in the code or committed to GitHub.
+
+## Files
 
 | File | What it is |
 |---|---|
-| `src/app.html` | **Single source** for the app (UI, prompt, output checker). Edit this. |
-| `build.js` | `node build.js` → generates `public/index.html`, `lib/shared.js`, `artifact.html` |
+| `src/app.html` | The whole app. Edit this one. |
+| `build.js` | Run `node build.js` after editing. It creates `public/index.html` and `lib/shared.js`. |
 | `public/index.html` | The page Vercel serves (generated) |
-| `api/triage.js` | Vercel serverless function: the Gemini call. Holds the key server-side. |
-| `lib/shared.js` | Generated: urgency prompt + output checker, shared by page and API |
-| `server.js` | Zero-dependency local server for testing |
-| `test/triage.test.js` | Offline tests (no key, no network) |
+| `api/triage.js` | The server function that calls Gemini |
+| `lib/shared.js` | The AI prompt and answer checks (generated) |
+| `server.js` | Run the app on your own computer |
+| `test/triage.test.js` | Tests, no key needed: `node test/triage.test.js` |
 
-## Run locally
+## Run it on your computer
 
-```bash
+```
 node build.js
-GEMINI_API_KEY=your-key node server.js     # http://localhost:3000
-node test/triage.test.js                    # no key needed
+GEMINI_API_KEY=your-key node server.js
 ```
 
-Optional: `GEMINI_MODEL=gemini-3.8-flash,gemini-3.5-flash-lite` sets which models to try, in order.
+Then open http://localhost:3000.
 
 ## Known limits
 
-- The hosted manager inbox is a **demo inbox stored in the browser of the phone that sent the request**. Good for an in-person test on one phone; not shared across devices yet.
-- Gemini free tier: Google may use submitted content to improve its products, so testers should not type full names, addresses or phone numbers. The app only asks for a first name and unit.
-- `artifact.html` is an alternate build that runs inside claude.ai; it is not needed for the Vercel deployment.
+- There's no shared database yet. The manager inbox and property code only work on the same phone, so manager mode is a one-device demo for now.
+- On Gemini's free tier, Google may use what's sent to improve its products. Don't put full names, addresses, or phone numbers in the description.
+- The AI can be wrong. It doesn't know the weather, your lease, or anything it can't see in the photo. The resident can always change the urgency.
