@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { blobToDataURL } from "./image";
 import type { Triage } from "../../shared/triage.js";
 import type { Lang } from "./i18n";
+import type { AdminReport } from "../../shared/admin.js";
 
 async function authHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -100,4 +101,16 @@ export async function translateTexts(texts: string[], target: Lang): Promise<str
   if (!r.ok) throw new ApiError(r.status === 429 ? "busy" : "unavailable");
   const j = (await r.json()) as { texts: string[] };
   return j.texts;
+}
+
+/** Owner-only dashboard data. null = not an admin (or not signed in); throws on server or network errors. */
+export async function fetchAdmin(probe = false): Promise<AdminReport | { admin: true } | null> {
+  const path = probe ? "/api/admin?probe=1" : "/api/admin";
+  const go = async () => fetch(path, { headers: await authHeader(), cache: "no-store" });
+  let r = await go();
+  if (r.status === 401 && !(await supabase.auth.refreshSession()).error) r = await go();
+  if (r.status === 404 || r.status === 401) return null;
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new ApiError("server", (j as { error?: string }).error || `Error ${r.status}`);
+  return j as AdminReport | { admin: true };
 }

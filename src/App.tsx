@@ -14,6 +14,7 @@ import { Inbox } from "./manager/Inbox";
 import { Insights } from "./manager/Insights";
 import { PropertiesList, PropertyDetail } from "./manager/Properties";
 import { Settings, Places } from "./settings/Settings";
+import { Admin } from "./admin/Admin";
 import { Spinner } from "./ui/kit";
 
 function Home() {
@@ -90,6 +91,7 @@ export function App() {
           <Route path="/m/properties/:id" element={<PropertyDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/places" element={<Places />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
