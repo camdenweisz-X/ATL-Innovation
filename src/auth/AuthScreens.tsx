@@ -83,13 +83,16 @@ export function Landing() {
               <li><span className="fi"><Icon name="inbox" /></span><div><b>Managers see emergencies first.</b> <span className="muted">An inbox sorted by urgency, with photos, unit, and entry permission.</span></div></li>
             </ul>
           </div>
-          <div className="preview-phone desktop-only" aria-hidden="true">
+          <figure className="preview desktop-only">
+          <div className="preview-phone" aria-hidden="true">
             <div className="stack" style={{ padding: 6 }}>
               <div className="verdict Urgent"><span className="eyebrow">AI urgency check</span><div className="lvl"><Icon name="clock" />Urgent</div><div className="when">It can wait until morning, so you can go to bed.</div><div className="small muted">A slow leak you can catch with a bucket can wait, but should be fixed first thing.</div></div>
               <div className="card pad stack-sm"><div className="h3">Until it's fixed</div><div className="small">• Put a bucket or towels under the drip.</div><div className="small">• Keep the bathroom light off if water is near it.</div></div>
-              <div className="btn block">Send to Peachtree Commons</div>
+              <div className="btn block preview-btn">Send to Peachtree Commons</div>
             </div>
           </div>
+          <figcaption className="preview-cap">Example of a result. Sign up to check your own.</figcaption>
+          </figure>
         </div>
       </main>
       <footer className="landing-hero landing-foot"><span>© 2026 The InnovAItors</span><LegalLinks /></footer>

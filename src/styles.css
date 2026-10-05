@@ -426,3 +426,9 @@ a.list-row:hover, button.list-row:hover { background: var(--surface-2); }
 .list-row > svg:first-child { width: 20px; height: 20px; flex: none; }
 .break { overflow-wrap: anywhere; }
 .pending-note { color: var(--urg); font-weight: 600; margin-top: 2px; }
+
+/* Landing page example card: a picture of the app, not a working control */
+.preview { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.preview-phone { pointer-events: none; user-select: none; }
+.preview-btn { cursor: default; }
+.preview-cap { font-size: 13px; color: var(--muted); text-align: center; }
