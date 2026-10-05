@@ -97,7 +97,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setWorkspace: (w) => { local.set("fc_workspace", w); setWs(w); },
     refresh: () => load(session, true),
     signOut: async () => {
-      await supabase.auth.signOut();
+      // "local" ends only this device's session. The default ("global") also signs out every other phone
+      // and browser, which then keep sending a dead token and get "Session not found" from the AI check.
+      await supabase.auth.signOut({ scope: "local" });
       for (const k of ["fc_draft", "fc_review", "fc_join", "fc_last_place", "fc_workspace", "cw_access"]) local.del(k);
     },
   };
