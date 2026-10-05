@@ -176,6 +176,9 @@ a.btn{text-decoration:none}
 .pills{display:flex;gap:6px;flex-wrap:wrap}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px}
 .reqtext{white-space:pre-wrap;font-size:14px;margin-top:8px;word-break:break-word}
+.codecard{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:14px 16px;margin:6px 0 16px}
+.codecard .eyebrow{font:600 11.5px/1.3 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.codecard .code{font:600 24px/1.2 var(--mono);letter-spacing:.06em;margin:4px 0;user-select:all}
 .empty{border:1.5px dashed var(--line);border-radius:14px;padding:28px 20px;text-align:center;color:var(--muted)}
 .banner{background:var(--flag-bg);color:var(--ink);border:1px solid var(--flag);border-radius:12px;padding:12px 14px;font-size:14px}
 footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -215,6 +218,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
         </div>
         <span class="hint" id="pf-modeHint">FixCheck drafts the request, then opens your email or texting app with it ready to send.</span></div>
       <div class="field" id="pf-emailWrap"><label for="pf-email">Manager or maintenance email</label><input type="email" id="pf-email" placeholder="maintenance@yourcommunity.com"></div>
+      <div class="field" id="pf-codeWrap" hidden><label for="pf-code">Property code</label><input type="text" id="pf-code" placeholder="FC-PEAC-7K3Q" autocapitalize="characters" autocomplete="off" spellcheck="false"><span class="hint">Your property manager gives you this code.</span></div>
       <div class="field" id="pf-mphoneWrap"><label for="pf-mphone">Manager phone for texts <span class="opt">(optional)</span></label><input type="tel" id="pf-mphone" placeholder="(404) 555-0123"></div>
       <p class="err" id="pf-err" hidden></p>
       <div class="actionbar"><button class="btn" type="submit">Save and continue</button></div>
@@ -337,7 +341,19 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
 
   <!-- ========== MANAGER INBOX ========== -->
   <section id="v-inbox" hidden>
+    <div id="mgrSetup" hidden>
+      <h1>Set up your property</h1>
+      <p class="lede">Property managers: create your property once, then share the code with residents so their requests land in this inbox.</p>
+      <form id="mgrForm" class="stack" novalidate>
+        <div class="field"><label for="mg-prop">Property name</label><input type="text" id="mg-prop" placeholder="Peachtree Commons"></div>
+        <div class="field"><label for="mg-line">After-hours maintenance line <span class="opt">(optional)</span></label><input type="tel" id="mg-line" placeholder="(404) 555-0100"><span class="hint">Residents see it when the check finds an emergency.</span></div>
+        <p class="err" id="mg-err" hidden></p>
+        <button class="btn" type="submit">Create property and code</button>
+      </form>
+    </div>
+    <div id="mgrMain" hidden>
     <h1>Maintenance inbox</h1>
+    <div class="codecard" id="codeCard"></div>
     <p class="lede" id="inboxLede">Emergencies first, then urgent, then routine. Newest first within each.</p>
     <div class="summary" id="inboxSummary"></div>
     <div class="chips" id="inboxFilter" style="margin-bottom:14px">
@@ -345,6 +361,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
       <button class="chip" type="button" data-f="all" aria-pressed="false">All</button>
     </div>
     <div class="stack" id="inboxList"></div>
+    </div>
   </section>
 
   <footer><span id="modeTag"></span><span id="verTag"></span><button class="btn quiet" id="editProfileBtn" type="button" style="padding:4px 10px;font-size:12px">Edit unit</button></footer>
@@ -358,7 +375,7 @@ footer{margin-top:28px;font:12px var(--mono);color:var(--muted);display:flex;jus
    1) claude.ai artifact: AI via claude.use("sample"), inbox via claude.use("db")
    2) Static hosting (Vercel): AI via POST /api/triage, inbox in this browser (localStorage)
    ============================================================ */
-const APP_VERSION = "v1.2";
+const APP_VERSION = "v1.3";
 /* SHARED-START (build.sh copies this block into lib/triage.js for the hosted API) */
 const LEVELS = ["Routine","Urgent","Emergency"];
 const RANK = {Routine:1, Urgent:2, Emergency:3};
@@ -419,6 +436,12 @@ $("profileForm").addEventListener("submit", e=>{
   e.preventDefault();
   const p = { name:$("pf-name").value.trim(), unit:$("pf-unit").value.trim(), prop:$("pf-prop").value.trim(), line:$("pf-line").value.trim(), email:$("pf-email").value.trim(), mphone:$("pf-mphone").value.trim(), mode: pfMode };
   if (!p.name || !p.unit){ $("pf-err").textContent = "Add your first name and unit so maintenance knows where to go."; $("pf-err").hidden=false; return; }
+  p.code = $("pf-code").value.trim().toUpperCase().replace(/\s+/g,"");
+  if (p.mode === "inbox"){
+    if (!/^FC-[A-Z0-9]{2,4}-[A-Z0-9]{4}$/.test(p.code)){ $("pf-err").textContent = "Enter the property code from your manager, like FC-PEAC-7K3Q."; $("pf-err").hidden=false; return; }
+    const prop = store.get("fc_property", null);
+    if (prop && prop.code === p.code){ p.prop = p.prop || prop.name; p.line = p.line || prop.line; }
+  }
   if (p.mode === "direct" && !p.email && !p.mphone){ $("pf-err").textContent = "Add your manager's email or phone so FixCheck knows where to send requests."; $("pf-err").hidden=false; return; }
   $("pf-err").hidden = true; profile = p; store.set("fc_profile", p); renderWho(); show("compose");
 });
@@ -427,12 +450,13 @@ function renderPfMode(){
   document.querySelectorAll("#pf-mode button").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.m===pfMode)));
   $("pf-modeHint").textContent = pfMode==="direct" ? "FixCheck drafts the request, then opens your email or texting app with it ready to send." : "Requests go straight to your property's FixCheck manager inbox, sorted by urgency.";
   $("pf-emailWrap").hidden = $("pf-mphoneWrap").hidden = pfMode !== "direct";
+  $("pf-codeWrap").hidden = pfMode !== "inbox";
 }
 $("pf-mode").addEventListener("click", e=>{ const b=e.target.closest("button[data-m]"); if(!b) return; pfMode=b.dataset.m; renderPfMode(); });
 renderPfMode();
 $("editProfileBtn").onclick = ()=>{
   const p = profile || {};
-  $("pf-name").value=p.name||""; $("pf-unit").value=p.unit||""; $("pf-prop").value=p.prop||""; $("pf-line").value=p.line||""; $("pf-email").value=p.email||""; $("pf-mphone").value=p.mphone||""; pfMode = p.mode || "direct"; renderPfMode();
+  $("pf-name").value=p.name||""; $("pf-unit").value=p.unit||""; $("pf-prop").value=p.prop||""; $("pf-line").value=p.line||""; $("pf-email").value=p.email||""; $("pf-mphone").value=p.mphone||""; $("pf-code").value=p.code||""; pfMode = p.mode || "direct"; renderPfMode();
   show("profile");
 };
 
@@ -761,7 +785,7 @@ $("sendBtn").onclick = async ()=>{
     urgency: state.chosen, suggested: current.level, aiUrgency: ai ? ai.urgency : null, aiReason: ai ? ai.reason : "",
     safety: ai ? ai.safety_message : "", category: $("r-cat").value, title: title || "Maintenance request", request: text, answers,
     checklistYes: SAFETY_QS.filter(s=>current.inp.checklist[s.k]==="yes").map(s=>s.q.replace(/\?$/,"")),
-    photo: state.photoThumb || null, manualReview: !ai, reviewReason: ai ? "" : (ERR_COPY[state.aiError]||"AI unavailable").replace(/\.$/,""),
+    propCode: profile.code || "", photo: state.photoThumb || null, manualReview: !ai, reviewReason: ai ? "" : (ERR_COPY[state.aiError]||"AI unavailable").replace(/\.$/,""),
     status: "new", app: APP_VERSION
   };
   item.full = composeFinal(item);
@@ -804,7 +828,7 @@ function renderSent(item, where){
   $("sentMeta").textContent = `${item.id} · ${item.localTime}`;
   $("sentWhere").textContent = direct ? (profile.email || profile.mphone ? "Choose how to send it. Your email or texting app opens with the request filled in; tap send there." : "Add your manager's email or phone under Edit unit, or copy the request and send it yourself.") :
     where==="inbox" ? "It's in your property manager's FixCheck inbox. Keep a copy below." :
-    where==="device" ? "Demo mode: saved to the Manager inbox tab on this device. Copy it below to send by text or email." :
+    where==="device" ? `Sent to the ${profile.prop || "property"} FixCheck inbox (code ${profile.code || "none"}). Demo build: the inbox is on this phone's Manager tab.` :
     "This device can't reach the manager inbox. Copy the request below and send it by text or email.";
   $("sentText").textContent = item.full;
   $("contactLine").textContent = [profile.email && `Manager email: ${profile.email}`, profile.mphone && `Manager phone: ${profile.mphone}`].filter(Boolean).join(" · ");
@@ -855,10 +879,32 @@ function subscribeInbox(){
     }, ()=>{ inboxMsg = "The inbox couldn't load. Reload the page to try again."; renderInbox(); });
   } else { inboxItems = store.get("fc_inbox", []); renderInbox(); }
 }
+function makeCode(name){
+  const letters = (name.toUpperCase().replace(/[^A-Z0-9]/g,"") + "XXXX").slice(0,4);
+  const pool = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let r = "";
+  const rnd = crypto.getRandomValues(new Uint32Array(4));
+  for (const n of rnd) r += pool[n % pool.length];
+  return `FC-${letters}-${r}`;
+}
+$("mgrForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const name = $("mg-prop").value.trim();
+  if (!name){ $("mg-err").textContent = "Add the property name."; $("mg-err").hidden = false; return; }
+  $("mg-err").hidden = true;
+  store.set("fc_property", { name, line: $("mg-line").value.trim(), code: makeCode(name), created: new Date().toISOString() });
+  renderInbox();
+});
 function renderInbox(){
-  if (!RT.inArtifact) inboxItems = store.get("fc_inbox", []);
+  const prop = store.get("fc_property", null);
+  $("mgrSetup").hidden = !!prop || RT.inArtifact; $("mgrMain").hidden = !prop && !RT.inArtifact;
+  if (!prop && !RT.inArtifact) return;
+  if (prop){
+    $("codeCard").innerHTML = `<div><div class="eyebrow">${esc(prop.name)} · resident sign-up code</div><div class="code" id="codeText">${esc(prop.code)}</div><div class="hint">Residents choose "My property uses FixCheck" and enter this code.</div></div><button class="btn quiet" id="copyCode" type="button">Copy code</button>`;
+    $("copyCode").onclick = async ()=>{ try{ await navigator.clipboard.writeText(prop.code); $("copyCode").textContent="Copied"; }catch{ $("copyCode").textContent="Select the code"; } setTimeout(()=>{ const b=$("copyCode"); if(b) b.textContent="Copy code"; },1800); };
+  }
+  if (!RT.inArtifact) inboxItems = store.get("fc_inbox", []).filter(i => !prop || i.propCode === prop.code);
   $("inboxLede").textContent = RT.inArtifact ? "Emergencies first, then urgent, then routine. Newest first within each." :
-    "Manager mode (demo): requests from residents whose property uses FixCheck, sent on this device. Emergencies first.";
+    "Requests from residents who entered your code, emergencies first. Demo build: requests sent from this phone.";
   const open = inboxItems.filter(i=>i.status!=="done");
   const n = l => open.filter(i=>i.urgency===l).length;
   $("inboxSummary").innerHTML = `<div class="e"><b>${n("Emergency")}</b><span>Emergency</span></div><div class="u"><b>${n("Urgent")}</b><span>Urgent</span></div><div class="r"><b>${n("Routine")}</b><span>Routine</span></div>`;
