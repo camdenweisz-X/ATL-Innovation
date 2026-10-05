@@ -62,8 +62,4 @@ GEMINI_API_KEY=your-key node server.js
 
 Then open http://localhost:3000.
 
-## Known limits
 
-- There's no shared database yet. The manager inbox and property code only work on the same phone, so manager mode is a one-device demo for now.
-- On Gemini's free tier, Google may use what's sent to improve its products. Don't put full names, addresses, or phone numbers in the description.
-- The AI can be wrong. It doesn't know the weather, your lease, or anything it can't see in the photo. The resident can always change the urgency.
