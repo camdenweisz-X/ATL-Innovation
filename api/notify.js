@@ -1,47 +1,21 @@
-// POST /api/notify — emails people about a request event. Signed-in users only.
+// POST /api/notify — tells people about a request event. Signed-in users only.
 // Body: { event_id }  (a row in request_events: 'created', 'status' or 'message')
-// The caller must be the person who created that event, and each event is emailed at most once.
-// Without RESEND_API_KEY this does nothing and returns { skipped: true }, so the app works without email.
+// The caller must be the person who created that event, and each event is delivered at most once.
+// Channels (each optional, see api/_lib/channels.js): email, phone push, and SMS for emergencies.
+// Everyone gets messages in their own language (profiles.lang).
 import { STATUS_LABEL } from "../shared/triage.js";
-import { send, readJSON, getUser, adminClient, rateLimited, appUrl } from "./_lib/server.js";
-
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-async function emailOf(admin, userId) {
-  const { data } = await admin.auth.admin.getUserById(userId);
-  return data?.user?.email || null;
-}
-
-function layout({ heading, lines, link, linkText }) {
-  return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2430">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #dde2e8;border-radius:12px">
-  <tr><td style="padding:24px">
-    <div style="font-weight:700;font-size:15px;color:#1f5a96;margin-bottom:16px">CanItWait</div>
-    <div style="font-size:19px;font-weight:700;margin-bottom:12px">${esc(heading)}</div>
-    ${lines.map((l) => `<p style="margin:0 0 10px;font-size:15px;line-height:1.5">${l}</p>`).join("")}
-    <a href="${esc(link)}" style="display:inline-block;margin-top:12px;background:#1f5a96;color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px">${esc(linkText)}</a>
-  </td></tr></table>
-  <div style="font-size:12px;color:#6b7684;margin-top:12px">You get these because email updates are on in CanItWait settings.</div>
-  </td></tr></table></body></html>`;
-}
-
-async function sendEmail(to, subject, html) {
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.RESEND_FROM || "CanItWait <onboarding@resend.dev>", to: [to], subject, html }),
-  });
-  if (!r.ok) console.error("Resend error", r.status, (await r.text().catch(() => "")).slice(0, 300));
-  return r.ok;
-}
+import { tr } from "../shared/i18n.js";
+import { send, readJSON, authUser, sendAuthError, adminClient, rateLimited, appUrl } from "./_lib/server.js";
+import { esc, emailLayout, sendEmail, sendPush } from "./_lib/channels.js";
+import { loadContext, alertManagers, forwardCopy, emailOf, placeOf, timeIn } from "./_lib/alerts.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "Use POST" });
-  const user = await getUser(req);
-  if (!user) return send(res, 401, { error: "Sign in first" });
+  const a = await authUser(req);
+  if (!a.user) return sendAuthError(res, a);
+  const user = a.user;
   const admin = adminClient();
-  if (!admin || !process.env.RESEND_API_KEY) return send(res, 200, { skipped: true });
+  if (!admin) return send(res, 200, { skipped: true });
   if (await rateLimited(user.id, "notify", 30, 10 * 60 * 1000)) return send(res, 429, { error: "Too many notifications" });
 
   const body = await readJSON(req);
@@ -60,58 +34,64 @@ export default async function handler(req, res) {
   if (!claimed?.length) return send(res, 200, { already: true });
 
   const { data: q } = await admin.from("requests").select("*").eq("id", ev.request_id).maybeSingle();
-  if (!q || !q.property_id) return send(res, 200, { skipped: "no property" }); // external places are emailed by the resident's own app
-  const { data: prop } = await admin.from("properties").select("name").eq("id", q.property_id).maybeSingle();
+  if (!q || !q.property_id) return send(res, 200, { skipped: "no property" }); // outside landlords are contacted by the resident's own app
+  const ctx = await loadContext(admin, q);
   const origin = appUrl(req);
-
-  // Who should hear about it: managers when the resident acts, the resident when a manager acts.
   const actorIsResident = ev.actor_id === q.resident_id;
-  let recipients = [];
-  if (actorIsResident) {
-    const { data: mgrs } = await admin.from("memberships").select("user_id").eq("property_id", q.property_id).eq("role", "manager");
-    recipients = (mgrs || []).map((m) => m.user_id).filter((id) => id !== user.id);
-  } else {
-    recipients = [q.resident_id];
-  }
-  if (!recipients.length) return send(res, 200, { sent: 0 });
-  const { data: profs } = await admin.from("profiles").select("id, full_name, notify_email").in("id", recipients.concat(ev.actor_id));
-  const nameOf = (id) => profs?.find((p) => p.id === id)?.full_name || "Someone";
-  const wants = (id) => profs?.find((p) => p.id === id)?.notify_email !== false;
+  let delivered = 0;
 
-  const where = `${esc(prop?.name || "Your property")}${q.unit ? `, ${esc(q.unit)}` : ""}`;
-  let sent = 0;
-  for (const rid of recipients) {
-    if (!wants(rid)) continue;
-    const to = await emailOf(admin, rid);
-    if (!to) continue;
+  // A new emergency: every manager on every channel, right away.
+  if (ev.kind === "created" && (q.mgr_urgency || q.urgency) === "Emergency") {
+    delivered += await alertManagers(admin, q, ctx, origin, { skip: [user.id] });
+    await admin.rpc("server_mark_request", { p_request: q.id, p_what: "alerted" });
+  }
+  if (ev.kind === "created" && await forwardCopy(admin, q, ctx, origin)) delivered++;
+
+  // Everything else: managers hear when the resident acts, the resident hears when a manager acts.
+  const recipients = actorIsResident ? ctx.managerIds.filter((id) => id !== user.id) : [q.resident_id];
+  const emergencyCreated = ev.kind === "created" && (q.mgr_urgency || q.urgency) === "Emergency";
+  for (const rid of emergencyCreated ? [] : recipients) {
+    const p = ctx.prof(rid), L = p.lang === "es" ? "es" : "en", t = (s, v) => tr(L, s, v);
+    const actor = ctx.prof(ev.actor_id);
+    const actorName = actor.full_name || t("Someone");
     const isMgr = rid !== q.resident_id;
-    const link = `${origin}/${isMgr ? "m" : "r"}/requests/${q.id}`;
-    let subject, heading, lines;
+    const path = `/${isMgr ? "m" : "r"}/requests/${q.id}`;
+    const where = esc(placeOf(ctx, q) || t("Your property"));
+    const lvl = t(q.mgr_urgency || q.urgency);
+    let subject, heading, lines, pushBody;
     if (ev.kind === "created") {
-      subject = `[${q.urgency}] ${q.title} · ${prop?.name || ""}${q.unit ? ` ${q.unit}` : ""}`;
-      heading = `New ${q.urgency.toLowerCase()} request: ${q.title}`;
-      lines = [`${esc(nameOf(q.resident_id))} · ${where}`, esc(q.body).replace(/\n/g, "<br>")];
-      if (q.ai_reason) lines.push(`<span style="color:#6b7684">AI check: ${esc(q.ai_reason)}</span>`);
+      subject = `[${lvl}] ${q.title} · ${placeOf(ctx, q)}`;
+      heading = t("New request ({level}): {title}", { level: lvl.toLowerCase(), title: q.title });
+      lines = [`${esc(ctx.prof(q.resident_id).full_name || t("Resident"))} · ${where}`, esc(q.body).replace(/\n/g, "<br>")];
+      if (q.ai_reason) lines.push(`<span style="color:#6b7684">${esc(t("AI check"))}: ${esc(q.ai_reason)}</span>`);
+      if (q.lang !== L) lines.push(`<span style="color:#6b7684">${esc(t("Written in {language}. Open it in CanItWait to translate.", { language: t(q.lang === "es" ? "Spanish" : "English") }))}</span>`);
+      pushBody = `${placeOf(ctx, q)} · ${ctx.prof(q.resident_id).full_name || ""}`;
     } else if (ev.kind === "status") {
-      const label = STATUS_LABEL[ev.status] || ev.status;
+      const label = t(STATUS_LABEL[ev.status] || ev.status);
       subject = `${label}: ${q.title}`;
       heading = isMgr
-        ? (ev.status === "canceled" ? `${nameOf(ev.actor_id)} canceled their request` : `${nameOf(ev.actor_id)} marked their request ${label.toLowerCase()}`)
-        : `Your request is now: ${label}`;
+        ? (ev.status === "canceled" ? t("{name} canceled their request", { name: actorName }) : t("{name} marked their request {status}", { name: actorName, status: label.toLowerCase() }))
+        : t("Your request is now: {status}", { status: label });
       lines = [`${esc(q.title)} · ${where}`];
       if (ev.status === "scheduled" && ev.detail?.scheduled_for) {
-        const t = new Date(ev.detail.scheduled_for).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-        lines.push(`<b>Visit: ${esc(t)}</b>${ev.detail.tech ? ` · ${esc(ev.detail.tech)}` : ""}`);
+        lines.push(`<b>${esc(t("Visit: {time}", { time: timeIn(ev.detail.scheduled_for, L) }))}</b>${ev.detail.tech ? ` · ${esc(ev.detail.tech)}` : ""}`);
       }
-      if (ev.body) lines.push(`Note from ${esc(nameOf(ev.actor_id))}: ${esc(ev.body)}`);
+      if (ev.body) lines.push(`${esc(t("Note from {name}", { name: actorName }))}: ${esc(ev.body)}`);
+      pushBody = ev.status === "scheduled" && ev.detail?.scheduled_for ? t("Visit: {time}", { time: timeIn(ev.detail.scheduled_for, L) }) : q.title;
     } else {
-      subject = `New message: ${q.title}`;
-      heading = `${nameOf(ev.actor_id)} sent a message`;
+      subject = t("New message: {title}", { title: q.title });
+      heading = t("{name} sent a message", { name: actorName });
       lines = [`${esc(q.title)} · ${where}`, `“${esc(ev.body)}”`];
+      pushBody = String(ev.body || "").slice(0, 140);
     }
-    if (await sendEmail(to, subject, layout({ heading, lines, link, linkText: "Open in CanItWait" }))) sent++;
+    delivered += await sendPush(admin, rid, { title: heading, body: pushBody, url: path, tag: `req-${q.id}` });
+    if (p.notify_email !== false) {
+      const to = await emailOf(admin, rid);
+      const html = emailLayout({ heading, lines, link: origin + path, linkText: t("Open in CanItWait"), foot: t("You get these because email updates are on in CanItWait settings.") });
+      if (to && await sendEmail(to, subject, html)) delivered++;
+    }
   }
-  // If every email failed (e.g., Resend was down), release the claim so a later call can retry.
-  if (sent === 0) await admin.from("request_events").update({ notified_at: null }).eq("id", eventId);
-  return send(res, 200, { sent });
+  // If nothing was delivered (for example email was down), release the claim so a later call can retry.
+  if (delivered === 0 && !emergencyCreated) await admin.from("request_events").update({ notified_at: null }).eq("id", eventId);
+  return send(res, 200, { sent: delivered });
 }

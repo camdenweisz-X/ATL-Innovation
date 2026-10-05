@@ -1,40 +1,21 @@
 // POST /api/triage — the AI urgency check. Signed-in users only.
-// Body: { description, checklist, localTime, afterHours, locationInHome?, image?: { mediaType, data(base64) } }
+// Body: { description, checklist, localTime, afterHours, locationInHome?, lang?, image?: { mediaType, data(base64) } }
 // The Gemini key lives only in the server environment (GEMINI_API_KEY).
 import { buildPrompt, normalizeAI, parseModelJSON, SAFETY_QS } from "../shared/triage.js";
-import { send, readJSON, getUser, rateLimited } from "./_lib/server.js";
+import { send, readJSON, authUser, sendAuthError, rateLimited } from "./_lib/server.js";
+import { askGemini, MODELS } from "./_lib/gemini.js";
 
-const MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-3.5-flash-lite").split(",").map((s) => s.trim()).filter(Boolean);
 const MAX_DESC = 2000;
 const MAX_IMAGE_B64 = 4 * 1024 * 1024; // keeps the whole request under Vercel's 4.5 MB body limit
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-async function askGemini(model, parts) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.2, maxOutputTokens: 4096 },
-    }),
-  });
-  if (!r.ok) {
-    const detail = await r.text().catch(() => "");
-    console.error(`Gemini ${model} error ${r.status}: ${detail.slice(0, 400)}`);
-    return { status: r.status };
-  }
-  const data = await r.json();
-  const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
-  return { status: 200, text, blocked: !text };
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "Use POST" });
-  if (!process.env.GEMINI_API_KEY) return send(res, 503, { error: "AI is not configured on the server" });
+  if (!process.env.GEMINI_API_KEY) return send(res, 503, { error: "AI is not configured on the server", code: "ai-config" });
 
-  const user = await getUser(req);
-  if (!user) return send(res, 401, { error: "Sign in to use the urgency check" });
+  const a = await authUser(req);
+  if (!a.user) return sendAuthError(res, a);
+  const user = a.user;
   if (await rateLimited(user.id, "triage", 15, 10 * 60 * 1000)) return send(res, 429, { error: "Too many checks. Try again in a few minutes." });
 
   const body = await readJSON(req);
@@ -45,6 +26,7 @@ export default async function handler(req, res) {
   for (const s of SAFETY_QS) { const v = body.checklist?.[s.k]; if (v === "yes" || v === "no") checklist[s.k] = v; }
   const localTime = String(body.localTime || new Date().toISOString()).slice(0, 60);
   const locationInHome = String(body.locationInHome || "").slice(0, 60);
+  const lang = body.lang === "es" ? "es" : "en";
 
   let image = null;
   if (body.image && typeof body.image.data === "string") {
@@ -54,7 +36,7 @@ export default async function handler(req, res) {
   }
   if (!description && !image) return send(res, 400, { error: "Add a description or a photo" });
 
-  const prompt = buildPrompt({ description, checklist, localTime, afterHours: !!body.afterHours, hasPhoto: !!image, locationInHome });
+  const prompt = buildPrompt({ description, checklist, localTime, afterHours: !!body.afterHours, hasPhoto: !!image, locationInHome, lang });
   const parts = image ? [image, { text: prompt }] : [{ text: prompt }];
 
   try {

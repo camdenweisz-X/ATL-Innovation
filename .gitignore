@@ -4,3 +4,4 @@ dist/
 .env.local
 .vercel/
 *.tsbuildinfo
+tests/.missing-es.json

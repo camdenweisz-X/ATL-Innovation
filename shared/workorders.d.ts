@@ -4,7 +4,7 @@ export interface WOItem {
   urgency: Urgency; ai_urgency: Urgency | null; mgr_urgency: Urgency | null; manual_review: boolean;
   after_hours: boolean; blanks_left: number; has_photo: boolean; first_visit: boolean | null;
 }
-export interface WOEvent { kind: string; status: string | null; created_at: string }
+export interface WOEvent { kind: string; status: string | null; created_at: string; detail?: { reason?: string } | null }
 export interface RepeatAlert {
   kind: "unit" | "building"; level: "high" | "watch"; property_id: string | null; unit?: string | null; category: string;
   count: number; days: number; ids: string[]; last: string; units?: number; unitNames?: string[];
@@ -19,5 +19,6 @@ export interface Insights {
   emergencies: number; emergencyAckMs: number | null; fixed: number; fixMs: number | null;
   firstVisitRate: number | null; returnTrips: number; returnTripCost: number | null;
   completeRate: number | null; keptRate: number | null; reviewed: number; byCategory: [string, number][];
+  aiUnder: number; aiOver: number; aiUnderIds: string[]; reasons: Record<"safety" | "minor" | "clarified" | "other", number>;
 }
 export function computeInsights(items: WOItem[], eventsById: Record<string, WOEvent[]>, opts?: { now?: number; sinceDays?: number; calloutCost?: number | string; tripCost?: number | string }): Insights;

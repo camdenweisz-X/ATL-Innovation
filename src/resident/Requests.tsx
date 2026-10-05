@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useSession } from "../lib/session";
+import { useT } from "../lib/i18n";
 import { ago, visitTime } from "../lib/format";
 import { finalUrgency } from "../../shared/workorders.js";
 import type { RequestRow } from "../lib/types";
@@ -12,6 +13,7 @@ import { RequestDetail } from "../shared-screens/RequestDetail";
 
 export function MyRequests() {
   const { user, memberships, externalPlaces } = useSession();
+  const { t } = useT();
   const [rows, setRows] = useState<RequestRow[] | null>(null);
   const [tab, setTab] = useState<"open" | "closed">("open");
   const load = useCallback(async () => {
@@ -27,18 +29,19 @@ export function MyRequests() {
   const shown = (rows || []).filter((r) => (tab === "open") === !["resolved", "canceled"].includes(r.status));
   return (
     <>
-      <TopBar title="My requests" />
+      <TopBar title={t("My requests")} />
       <div className="page stack-lg">
         <div className="page-head" style={{ marginBottom: 0 }}>
-          <div><h1 className="h1">My requests</h1><p className="lede">Everything you've reported, with the latest status.</p></div>
+          <div><h1 className="h1">{t("My requests")}</h1><p className="lede">{t("Everything you've reported, with the latest status.")}</p></div>
+          {!!rows?.length && <Link to="/record/all" className="btn secondary sm"><Icon name="printer" />{t("Records")}</Link>}
         </div>
-        <div className="seg" role="group" aria-label="Filter">
-          <button aria-pressed={tab === "open"} onClick={() => setTab("open")}>Open</button>
-          <button aria-pressed={tab === "closed"} onClick={() => setTab("closed")}>Closed</button>
+        <div className="seg" role="group" aria-label={t("Filter")}>
+          <button aria-pressed={tab === "open"} onClick={() => setTab("open")}>{t("Open")}</button>
+          <button aria-pressed={tab === "closed"} onClick={() => setTab("closed")}>{t("Closed")}</button>
         </div>
         {!rows ? <Skeleton /> : shown.length === 0 ? (
-          <Empty icon="list" title={tab === "open" ? "No open requests" : "Nothing closed yet"} action={tab === "open" ? <Link to="/r" className="btn">Report a problem</Link> : undefined}>
-            {tab === "open" ? "When you report something, it shows up here with its status and any messages from maintenance." : "Fixed and canceled requests show up here."}
+          <Empty icon="list" title={tab === "open" ? t("No open requests") : t("Nothing closed yet")} action={tab === "open" ? <Link to="/r" className="btn">{t("Report a problem")}</Link> : undefined}>
+            {tab === "open" ? t("When you report something, it shows up here with its status and any messages from maintenance.") : t("Fixed and canceled requests show up here.")}
           </Empty>
         ) : (
           <div className="list">
@@ -47,8 +50,8 @@ export function MyRequests() {
                 <div className="grow">
                   <div className="row-wrap" style={{ gap: 6 }}><UrgencyBadge u={finalUrgency(r)} /><StatusBadge s={r.status} /></div>
                   <div className="title">{r.title}</div>
-                  {r.status === "scheduled" && r.scheduled_for && <div className="xs" style={{ fontWeight: 600, color: "var(--info)", margin: "2px 0" }}>Visit {visitTime(r.scheduled_for)}</div>}
-                  <div className="meta">{placeName(r)}{r.unit ? ` · ${r.unit}` : ""} · updated {ago(r.updated_at)}{ago(r.updated_at) === "just now" ? "" : " ago"}</div>
+                  {r.status === "scheduled" && r.scheduled_for && <div className="xs" style={{ fontWeight: 600, color: "var(--info)", margin: "2px 0" }}>{t("Visit {time}", { time: visitTime(r.scheduled_for) })}</div>}
+                  <div className="meta">{placeName(r)}{r.unit ? ` · ${r.unit}` : ""} · {ago(r.updated_at) === t("just now") ? t("updated just now") : t("updated {ago} ago", { ago: ago(r.updated_at) })}</div>
                 </div>
                 <Icon name="chevronRight" width={18} height={18} style={{ color: "var(--muted)", alignSelf: "center" }} />
               </Link>
@@ -63,11 +66,12 @@ export function MyRequests() {
 export function ResidentRequestPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { t } = useT();
   return (
     <>
-      <TopBar title="Request" back={() => nav("/r/requests")} />
+      <TopBar title={t("Request")} back={() => nav("/r/requests")} />
       <div className="page">
-        <Link to="/r/requests" className="btn ghost sm desktop-only" style={{ marginBottom: 12, marginLeft: -8 }}><Icon name="chevronLeft" />My requests</Link>
+        <Link to="/r/requests" className="btn ghost sm desktop-only" style={{ marginBottom: 12, marginLeft: -8 }}><Icon name="chevronLeft" />{t("My requests")}</Link>
         <RequestDetail id={id!} mode="resident" />
       </div>
     </>

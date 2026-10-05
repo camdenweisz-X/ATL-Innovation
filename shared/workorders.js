@@ -2,6 +2,7 @@
 // Pure functions (no database calls), shared by the app and the tests.
 
 const DAY_MS = 864e5;
+const RANK = { Routine: 1, Urgent: 2, Emergency: 3 };
 const SEEN = ["acknowledged", "scheduled", "in_progress", "resolved"];
 
 export const finalUrgency = (r) => r.mgr_urgency || r.urgency;
@@ -91,6 +92,14 @@ export function computeInsights(items, eventsById, opts = {}) {
   const complete = list.filter((i) => i.blanks_left === 0 && i.has_photo).length;
   const reviewed = list.filter((i) => i.ai_urgency && !i.manual_review && i.status !== "new");
   const kept = reviewed.filter((i) => finalUrgency(i) === i.ai_urgency).length;
+  // AI accuracy: "under" means the team made it MORE urgent than the AI said (the safety-relevant miss).
+  const under = reviewed.filter((i) => RANK[finalUrgency(i)] > RANK[i.ai_urgency]);
+  const over = reviewed.filter((i) => RANK[finalUrgency(i)] < RANK[i.ai_urgency]);
+  const reasons = { safety: 0, minor: 0, clarified: 0, other: 0 };
+  for (const i of list) {
+    const last = ev(i).filter((e) => e.kind === "urgency" && e.detail?.reason).at(-1);
+    if (last && last.detail.reason in reasons) reasons[last.detail.reason]++;
+  }
   const pct = (a, b) => (b ? Math.round((100 * a) / b) : null);
   const callout = Number(opts.calloutCost) || 0, trip = Number(opts.tripCost) || 0;
   const byCat = {};
@@ -103,6 +112,7 @@ export function computeInsights(items, eventsById, opts = {}) {
     firstVisitRate: pct(visitKnown.length - returnTrips, visitKnown.length), returnTrips, returnTripCost: trip ? returnTrips * trip : null,
     completeRate: pct(complete, list.length),
     keptRate: pct(kept, reviewed.length), reviewed: reviewed.length,
+    aiUnder: under.length, aiOver: over.length, aiUnderIds: under.map((i) => i.id), reasons,
     byCategory: Object.entries(byCat).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
   };
 }

@@ -24,6 +24,7 @@
     <p class="eyebrow">Legal</p>
     <h1>Privacy Policy</h1>
     <p class="meta"><span>Effective October 5, 2026</span><span>Last updated October 5, 2026</span></p>
+    <p class="lede" lang="es">Esta política está disponible solo en inglés por ahora. Si tiene preguntas en español, escríbanos a camdenweisz@gmail.com.</p>
     <p class="lede">This policy explains what personal information CanItWait collects, how we use and share it, and the choices and rights you have. It applies to everyone who uses CanItWait anywhere in the United States.</p>
   </div>
 
@@ -58,7 +59,7 @@
           <li>We don't sell your personal information or share it for advertising.</li>
           <li>No ads, analytics or tracking cookies.</li>
           <li>Your requests are visible only to you and your property's managers.</li>
-          <li>Photos and descriptions are analyzed by Google's Gemini AI to suggest urgency.</li>
+          <li>Photos and descriptions are analyzed by Google's Gemini AI to suggest urgency, and text is translated by it when you ask.</li>
           <li>Delete your account at any time in Settings.</li>
           <li>The privacy rights below apply to every U.S. user, whatever state you live in.</li>
         </ul>
@@ -78,10 +79,10 @@
             <thead><tr><th scope="col">Category</th><th scope="col">Examples</th><th scope="col">Source</th></tr></thead>
             <tbody>
               <tr><td>Account identifiers</td><td data-label="Examples">Name, email address, account ID, password (stored only in hashed form)</td><td data-label="Source">You, or Google if you sign in with Google (name, email, profile picture)</td></tr>
-              <tr><td>Contact details</td><td data-label="Examples">Optional mobile number; landlord contact details you enter for a home not on CanItWait</td><td data-label="Source">You</td></tr>
+              <tr><td>Contact details</td><td data-label="Examples">Optional mobile number (managers can choose to get emergency text messages at it); landlord contact details you enter for a home not on CanItWait; a property's emergency backup contact and forwarding email, entered by its managers</td><td data-label="Source">You</td></tr>
               <tr><td>Property and tenancy details</td><td data-label="Examples">Property name and address, unit, after-hours phone, whether you are a resident or manager</td><td data-label="Source">You or your property manager</td></tr>
-              <tr><td>Maintenance requests</td><td data-label="Examples">Photos, descriptions, urgency, category, follow-up answers, entry permission, pet and availability notes, status updates, messages</td><td data-label="Source">You, your property manager</td></tr>
-              <tr><td>Usage and device data</td><td data-label="Examples">Number of urgency checks run; server logs such as IP address, browser type and timestamps</td><td data-label="Source">Collected automatically</td></tr>
+              <tr><td>Maintenance requests</td><td data-label="Examples">Photos, short videos, descriptions, urgency, category, follow-up answers, entry permission, gate or parking notes, pet and availability notes, status updates, urgency changes and their reasons, messages</td><td data-label="Source">You, your property manager</td></tr>
+              <tr><td>Usage and device data</td><td data-label="Examples">Number of urgency checks and translations run; your language setting; if you turn on phone notifications, a notification address for that device from your browser's push service; server logs such as IP address, browser type and timestamps</td><td data-label="Source">Collected automatically</td></tr>
             </tbody>
           </table>
         </div>
@@ -109,10 +110,12 @@
           <li><strong>With your property's managers.</strong> Requests you send to a property, along with your name, unit and contact details, are visible to the managers of that property so they can schedule the repair.</li>
           <li><strong>With service providers</strong> who process data on our behalf under contract and only for the purposes in this policy:
             <ul>
-              <li>Supabase: database, accounts and photo storage</li>
+              <li>Supabase: database, accounts and photo and video storage</li>
               <li>Vercel: website hosting and server functions</li>
               <li>Google: Gemini AI analysis and, if you choose it, Google sign-in</li>
               <li>Resend: email notifications, when enabled</li>
+              <li>Twilio: emergency text messages to managers and backup contacts, when enabled</li>
+              <li>Your browser's push service (for example Google, Apple or Mozilla): phone and browser notifications, if you turn them on</li>
             </ul>
           </li>
           <li><strong>For legal reasons</strong>, when we believe in good faith that disclosure is required by law or needed to protect the safety, rights or property of any person.</li>
@@ -123,7 +126,7 @@
 
       <section id="ai">
         <h2><span class="n">5.</span>AI processing</h2>
-        <p>When you tap <b>Check urgency</b>, your photo, description and the current time are sent to Google's Gemini AI service to produce a suggested urgency level, safety steps and a draft request. We currently use Google's free tier, under which Google may retain this content and use it to improve its products, which can include review by people at Google. Please don't include sensitive personal details in photos or descriptions.</p>
+        <p>When you tap <b>Check urgency</b>, your photo, description and the current time are sent to Google's Gemini AI service to produce a suggested urgency level, safety steps and a draft request. We currently use Google's free tier, under which Google may retain this content and use it to improve its products, which can include review by people at Google. Please don't include sensitive personal details in photos or descriptions. When you tap <b>Translate</b>, the text of that request and its messages is sent to Gemini the same way. Videos are not sent to the AI; a single still image from a video is, when there is no photo.</p>
         <p>We do not use your content to train our own AI models.</p>
       </section>
 
@@ -143,10 +146,10 @@
         <h2><span class="n">8.</span>How long we keep it</h2>
         <ul>
           <li><strong>Account and profile:</strong> until you delete your account.</li>
-          <li><strong>Requests, photos and messages:</strong> until the resident deletes their account or the property is deleted. Messages you sent on someone else's request stay in that request's history without your name attached.</li>
+          <li><strong>Requests, photos, videos and messages:</strong> until the resident deletes their account or the property is deleted. Messages you sent on someone else's request stay in that request's history without your name attached.</li>
           <li><strong>Usage counts and server logs:</strong> only as long as needed for security and abuse prevention.</li>
         </ul>
-        <p>When you delete your account in <b>Settings → Delete account</b>, we permanently delete your account, profile, requests and photos, and any property where you are the only manager. Copies may remain briefly in our providers' systems before they are removed. If the project ends, we will delete the data we hold.</p>
+        <p>When you delete your account in <b>Settings → Delete account</b>, we permanently delete your account, profile, requests, photos and videos, and any property where you are the only manager. Copies may remain briefly in our providers' systems before they are removed. If the project ends, we will delete the data we hold.</p>
       </section>
 
       <section id="rights">

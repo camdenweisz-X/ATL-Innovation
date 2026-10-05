@@ -55,3 +55,33 @@ test("prompt includes rules and checklist", () => {
   const p = buildPrompt({ description: "gas", checklist: { gas: "yes" }, localTime: "Sun 10pm", afterHours: true, hasPhoto: true });
   assert.ok(p.includes("choose the MORE urgent")); assert.ok(p.includes("answered YES: Do you smell gas"));
 });
+
+// 2.2
+const { safetyHints } = await import("../shared/triage.js");
+test("prompt asks for Spanish when the resident uses Spanish", () => {
+  const es = buildPrompt({ description: "fuga", checklist: {}, localTime: "x", afterHours: false, hasPhoto: false, lang: "es" });
+  assert.ok(es.includes("Spanish")); assert.ok(es.includes("Keep \"urgency\" and \"category\" exactly"));
+  assert.ok(buildPrompt({ description: "leak", checklist: {}, localTime: "x", afterHours: false, hasPhoto: false }).includes("in English"));
+});
+test("lang is passed through to the AI", async () => {
+  calls = []; let sent = "";
+  fakeFetch();
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => { if (String(url).includes("generativelanguage")) sent = opts.body; return orig(url, opts); };
+  await call({ description: "hay una fuga", lang: "es" });
+  assert.ok(sent.includes("Spanish"));
+});
+test("danger words are caught in English and Spanish", () => {
+  assert.deepEqual(safetyHints("I smell gas near the stove"), ["gas"]);
+  assert.deepEqual(safetyHints("huele a gas en la cocina"), ["gas"]);
+  assert.deepEqual(safetyHints("sale humo del enchufe y hay chispas"), ["fire"]);
+  assert.deepEqual(safetyHints("Toilet overflowing, sewage on the floor"), ["water"]);
+  assert.deepEqual(safetyHints("la alarma de monóxido está sonando"), ["co"]);
+  assert.deepEqual(safetyHints("Front door won't lock"), ["lock"]);
+  assert.deepEqual(safetyHints("La puerta no cierra"), ["lock"]);
+  assert.deepEqual(safetyHints("Light bulb is out in the hallway"), []);
+});
+test("auth failures are reported as auth, not as a server error", async () => {
+  fakeFetch({ authOk: false }); const r = await call({ description: "x" });
+  assert.equal(r.statusCode, 401); assert.equal(r.body.code, "auth");
+});

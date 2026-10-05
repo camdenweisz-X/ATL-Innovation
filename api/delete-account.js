@@ -1,12 +1,13 @@
 // POST /api/delete-account — permanently deletes the signed-in user's account.
-// Removes their photos, deletes properties where they are the only manager, then deletes the auth user
+// Removes their photos and videos, deletes properties where they are the only manager, then deletes the auth user
 // (which cascades to profile, memberships, requests and messages).
-import { send, getUser, adminClient } from "./_lib/server.js";
+import { send, authUser, sendAuthError, adminClient } from "./_lib/server.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "Use POST" });
-  const user = await getUser(req);
-  if (!user) return send(res, 401, { error: "Sign in first" });
+  const a = await authUser(req);
+  if (!a.user) return sendAuthError(res, a);
+  const user = a.user;
   const admin = adminClient();
   if (!admin) return send(res, 503, { error: "Account deletion isn't configured on the server (SUPABASE_SERVICE_ROLE_KEY)." });
 
@@ -17,12 +18,14 @@ export default async function handler(req, res) {
       const { count } = await admin.from("memberships").select("id", { count: "exact", head: true }).eq("property_id", property_id).eq("role", "manager");
       if ((count || 0) <= 1) await admin.from("properties").delete().eq("id", property_id);
     }
-    // 2. Their photos.
-    for (;;) {
-      const { data: files } = await admin.storage.from("request-photos").list(user.id, { limit: 100 });
-      if (!files?.length) break;
-      await admin.storage.from("request-photos").remove(files.map((f) => `${user.id}/${f.name}`));
-      if (files.length < 100) break;
+    // 2. Their photos and videos.
+    for (const bucket of ["request-photos", "request-videos"]) {
+      for (;;) {
+        const { data: files } = await admin.storage.from(bucket).list(user.id, { limit: 100 });
+        if (!files?.length) break;
+        await admin.storage.from(bucket).remove(files.map((f) => `${user.id}/${f.name}`));
+        if (files.length < 100) break;
+      }
     }
     // 3. The account itself.
     const { error } = await admin.auth.admin.deleteUser(user.id);
