@@ -16,9 +16,11 @@ export const RANK: Record<Urgency, number>;
 export const CATEGORIES: string[];
 export const SAFETY_QS: { k: string; q: string }[];
 export const STATUS_LABEL: Record<Status, string>;
+export const URGENCY_REASONS: { k: "safety" | "minor" | "clarified" | "other"; label: string }[];
+export function safetyHints(text: string): string[];
 export function buildPrompt(inp: {
   description: string; checklist: Record<string, string | undefined>; localTime: string;
-  afterHours: boolean; hasPhoto: boolean; locationInHome?: string;
+  afterHours: boolean; hasPhoto: boolean; locationInHome?: string; lang?: "en" | "es";
 }): string;
 export function normalizeAI(d: unknown): Triage;
 export function parseModelJSON(text: string): unknown;

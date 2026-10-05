@@ -53,7 +53,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       supabase.from("memberships").select("*, property:properties(*)").eq("user_id", uid).order("created_at"),
       supabase.from("external_places").select("*").eq("user_id", uid).order("created_at"),
     ]);
-    setProfile((p.data as Profile) || { id: uid, full_name: "", phone: null, notify_email: true, onboarded: false });
+    setProfile((p.data as Profile) || { id: uid, full_name: "", phone: null, notify_email: true, notify_sms: true, onboarded: false, lang: "en" });
     setMemberships((m.data as Membership[]) || []);
     setExternal((e.data as ExternalPlace[]) || []);
     setLoading(false);
@@ -98,7 +98,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     refresh: () => load(session, true),
     signOut: async () => {
       await supabase.auth.signOut();
-      for (const k of ["fc_draft", "fc_review", "fc_join", "fc_last_place", "fc_workspace"]) local.del(k);
+      for (const k of ["fc_draft", "fc_review", "fc_join", "fc_last_place", "fc_workspace", "cw_access"]) local.del(k);
     },
   };
   return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>;
