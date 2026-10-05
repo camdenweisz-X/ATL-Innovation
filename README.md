@@ -1,65 +1,59 @@
 # FixCheck
 
-Team: The InnovAItors (ATL Cup 2026, Mission 5)
+Team: The InnovAItors (ATL Cup 2026)
 
-FixCheck is for apartment renters in metro Atlanta. When something breaks, you take a photo and type a few words. The app tells you if it's an Emergency, Urgent, or Routine, writes up the maintenance request, and helps you send it.
+FixCheck helps renters report maintenance problems and helps property managers handle them. A renter takes a photo and types a few words. The app says whether it's an Emergency, Urgent, or Routine, explains why, gives safe steps until it's fixed, and drafts the request. The manager gets an inbox with emergencies at the top, and both sides follow the request's status and messages in one place.
 
-## How it works
+**Setup instructions are in [SETUP.md](SETUP.md).**
+
+## What's in it
 
 **Renters**
-1. Open the app and pick "I rent an apartment."
-2. Enter your first name and unit. Choose how requests get sent: by your own email/text, or to your property's FixCheck inbox (needs a code from your manager).
-3. Add a photo, describe the problem, and answer the quick safety questions.
-4. Tap **Check urgency**. The AI looks at the photo and description and gives you:
-   - the urgency level and why
-   - what to do until it's fixed
-   - a drafted request you can edit
-   - questions maintenance will probably ask
-5. Change anything you want, then send it. Past requests show up under **My requests**.
+- Create an account (email or Google), then join your property with a code from your manager, or add a home whose landlord isn't on FixCheck.
+- Report a problem: photo, description, where in the home, and quick safety questions. Any "yes" to a safety question makes it an emergency, no matter what the AI says.
+- Review the AI's urgency call and the drafted request, change anything, and add access details (permission to enter, pets, best times).
+- Send it. FixCheck properties get it in their inbox; outside landlords get it by your own email or text app.
+- Track every request: status timeline and messages with maintenance.
+- More than one home? Add each one and pick which home when you report.
 
 **Managers**
-1. Pick "I manage a property."
-2. Enter the property name. You get a code like `FC-PEAC-7K3Q` to give to residents.
-3. Requests from residents who used your code show up in your inbox, emergencies first.
+- Create properties and share a resident code or invite link.
+- Inbox sorted by urgency with counts, filters by property and status, photos, unit, entry permission, and how long each request has waited.
+- Updates live as requests come in. Change status (seen, scheduled, in progress, fixed) with a note, and message the resident.
+- Invite co-managers with a separate team code. See residents, remove people, and create new codes if one leaks.
 
-**Safety rules that don't depend on the AI**
-- Answering "Yes" to any safety question (gas smell, smoke, water you can't stop, CO alarm, door won't lock) always makes it an Emergency.
-- If the AI is down or gives a bad answer, you can still fill out a basic form and send it. It gets marked for manual review.
+**Everyone**
+- Settings for name and phone, password, homes and properties, email updates, light or dark mode, sign out, and delete account.
+- If someone is both a renter and a manager, they can switch between the two views.
 
-## Setup (Vercel, free)
+## How it's built
 
-1. Put this code in a GitHub repo. `vercel.json`, `public/`, and `api/` need to be at the top level.
-2. Go to vercel.com, log in with GitHub, click **Add New → Project**, and import the repo. Framework: **Other**.
-3. Under **Environment Variables**, add `GEMINI_API_KEY` with your key from aistudio.google.com/apikey.
-4. Click **Deploy**. Open the link it gives you on your phone.
-
-Every time you commit to GitHub, Vercel redeploys on its own. The version number is in the app's footer.
-
-If the AI check fails, open your project in Vercel and check **Logs**. Lines starting with `Gemini ... error` tell you why. Usually it's a missing key (add it and redeploy) or the free limit (wait a minute).
-
-## Where the API key goes
-
-Only in Vercel's environment variables. The browser never sees it, and it should never be put in the code or committed to GitHub.
-
-## Files
-
-| File | What it is |
+| Part | Tool |
 |---|---|
-| `src/app.html` | The whole app. Edit this one. |
-| `build.js` | Run `node build.js` after editing. It creates `public/index.html` and `lib/shared.js`. |
-| `public/index.html` | The page Vercel serves (generated) |
-| `api/triage.js` | The server function that calls Gemini |
-| `lib/shared.js` | The AI prompt and answer checks (generated) |
-| `server.js` | Run the app on your own computer |
-| `test/triage.test.js` | Tests, no key needed: `node test/triage.test.js` |
+| App | React + TypeScript, built with Vite (`src/`) |
+| Database, accounts, photos, live updates | Supabase (`supabase/migrations/0001_fixcheck.sql`) |
+| AI urgency check | Google Gemini, called from `api/triage.js` |
+| Emails | Resend, called from `api/notify.js` (optional) |
+| Hosting | Vercel (the page plus the `api/` functions) |
 
-## Run it on your computer
+The urgency rules and the AI prompt are in `shared/triage.js`, used by both the app and the server.
+
+## Folders
 
 ```
-node build.js
-GEMINI_API_KEY=your-key node server.js
+src/
+  auth/            sign in, sign up, password reset, join links
+  onboarding/      first-run setup
+  resident/        report flow, my requests
+  manager/         inbox, properties and team
+  settings/        settings and homes
+  shared-screens/  request detail, place and property forms
+  ui/              buttons, fields, sheets, icons
+  lib/             Supabase client, session, API calls, helpers
+api/               serverless functions (AI check, emails, account deletion)
+shared/            urgency rules and AI prompt
+supabase/          database schema and access-rule tests
+tests/             server function tests
 ```
 
-Then open http://localhost:3000.
-
-
+The original single-file prototype (v1.4, submitted for Mission 5) is in the git history.
